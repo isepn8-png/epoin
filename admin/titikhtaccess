@@ -1,0 +1,19 @@
+Options -Indexes -MultiViews
+RewriteEngine On
+
+# Lewatin file/folder yang beneran ada
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Skip redirect untuk endpoint AJAX (contoh: ajax_get_kelas.php)
+RewriteRule ^ajax_.*\.php$ - [L]
+
+# Pretty URL
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+?)/?$ $1.php [L]
+
+# Canonical GET/HEAD: .php -> tanpa ekstensi
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.php(\s|\?)
+RewriteCond %{REQUEST_METHOD} !POST
+RewriteRule ^ %1 [R=301,L]

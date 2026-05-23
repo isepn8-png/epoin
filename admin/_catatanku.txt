@@ -1,0 +1,14 @@
+aku kasih animasi elegan: fade-in + gradient shimmer halus dan underline yang “grow”. (otomatis hormat ke prefers-reduced-motion).
+
+
+di jenjang pembinaan pd, Ketika poin 0, tapi posisi saat ini di sp 1, tolong hilangkan kondisi label saat ini 
+
+untuk laporan bsensi, buat logika, Ketika login wali as, hanya tampil laporan sesuai kelas yg di pegang nya, lau bukan wali kelas, laporan absensi hanya aktif untuk laporan absensi per maple yang di pegangnya.
+yang tampil semua hanya yg role admin
+
+
+tambahkan di laporan absensi ada tombol cetak absensi yang di print ke rekap absensi (contoh tabel yg rekap_bulaanan)
+
+berikan semua tampilan yang menarik, interaktif, dan berwarna
+
+ berikan semua tampilan yang menarik, interaktif, dan berwarna, user friendly , indah dilihat, UX & UI berfungsi dengan baik dan memuaskan bagi pengguna. 

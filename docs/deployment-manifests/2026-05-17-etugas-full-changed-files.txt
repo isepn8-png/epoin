@@ -1,0 +1,81 @@
+# E-Tugas — Full Production File List (Phases 1A–4A + Multi-Kelas + Safe Delete)
+# Date: 2026-05-17 (updated for final package)
+# Use with: 2026-05-17-etugas-full-manual-hosting-deploy.md
+#
+# Legend:
+#   [NEW]     Upload if file does not exist on production yet
+#   [REPLACE] Overwrite existing file on production (backup first)
+#   [SQL]     Import via phpMyAdmin only — do NOT expose in public web root
+#
+# IMPORTANT:
+#   includes/etugas_helpers.php MUST be the latest build including:
+#   - Multi-kelas create (batch insert, duplicate skip)
+#   - Safe Delete with atomic DELETE ... NOT EXISTS (pengumpulan)
+#
+# ---------------------------------------------------------------------------
+# SQL (import once — Phase 1A only)
+# ---------------------------------------------------------------------------
+[SQL] database/manual-migrations/2026-05-17-001-create-etugas-tables.sql
+#
+# ---------------------------------------------------------------------------
+# NEW — upload all of these for a greenfield E-Tugas deploy
+# ---------------------------------------------------------------------------
+[NEW] includes/etugas_helpers.php
+[NEW] admin/etugas.php
+[NEW] admin/etugas_tambah.php
+[NEW] admin/etugas_act.php
+[NEW] admin/etugas_edit.php
+[NEW] admin/etugas_update.php
+[NEW] admin/etugas_status.php
+[NEW] admin/etugas_hapus.php
+[NEW] admin/etugas_form_inc.php
+[NEW] admin/etugas_pengumpulan.php
+[NEW] admin/etugas_pengumpulan_detail.php
+[NEW] admin/etugas_pengumpulan_update.php
+[NEW] admin/etugas_rekap.php
+[NEW] admin/etugas_rekap_export_csv.php
+[NEW] siswa/tugas_saya.php
+[NEW] siswa/tugas_detail.php
+[NEW] siswa/tugas_kumpulkan.php
+#
+# ---------------------------------------------------------------------------
+# REPLACE — overwrite existing EPOIN files (backup before replace)
+# ---------------------------------------------------------------------------
+[REPLACE] admin/header.php
+[REPLACE] siswa/header.php
+#
+# ---------------------------------------------------------------------------
+# PARTIAL DEPLOY NOTE
+# If files already exist from an earlier phase, treat all [NEW] rows as [REPLACE].
+# Always overwrite includes/etugas_helpers.php with the final package version.
+#
+# ---------------------------------------------------------------------------
+# DO NOT UPLOAD TO PRODUCTION
+# ---------------------------------------------------------------------------
+# tests/etugas_phase2_qa_harness.php
+# tests/etugas_phase3a_qa_harness.php
+# tests/etugas_phase4a_qa_harness.php
+# tests/etugas_multikelas_qa_harness.php
+# tests/etugas_safe_delete_qa_harness.php
+# docs/deployment-manifests/*
+# docs/ai-agent-reports/*
+# .env
+# .env.local
+# full SQL database dumps
+# *_local.sql
+# *.zip
+# *.rar
+# *.bak
+# *.backup
+# *.log
+# credentials
+# local config files
+# private keys / license keys
+#
+# ---------------------------------------------------------------------------
+# COUNT SUMMARY
+# ---------------------------------------------------------------------------
+# SQL files to import:        1
+# New PHP files to upload:   17
+# Existing files to replace:  2
+# Total production PHP:      19

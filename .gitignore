@@ -1,0 +1,35 @@
+.env
+.env.*
+!.env.example
+*.bak
+*.bak.*
+*.stage1b.bak
+*.pre-stage1b.bak
+*.sql
+!database/manual-migrations/*.sql
+*.sql.gz
+*.zip
+*.rar
+*.7z
+*.log
+uploads/*
+!uploads/.gitkeep
+backup/
+backups/
+node_modules/
+tests/
+
+# QA / debug scripts (temporary)
+_retest_*.php
+_read_*.php
+_verify_*.php
+_qa_*.php
+
+# vendor/ DI-COMMIT (tidak ada composer.json di root; lihat VENDOR_COMPOSER_DECISION_EPOIN.md)
+# vendor/
+import_siswa.xlsx
+
+# Admin generated uploads - do not commit user data
+admin/uploads/*
+!admin/uploads/.gitkeep
+import_siswa.xlsx

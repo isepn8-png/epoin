@@ -1,0 +1,10 @@
+# ==== Uploads dir hardening ====
+Options -Indexes
+
+# Larang eksekusi file PHP di folder upload (hanya gambar/dokumen)
+<FilesMatch "\.(ph(p|tml|p[0-9])|phtml)$">
+  Require all denied
+</FilesMatch>
+
+# (Opsional) kalau diizinkan hosting:
+# php_flag engine off

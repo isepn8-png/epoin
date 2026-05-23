@@ -1,0 +1,42 @@
+Singkatnya: **bukan otomatis dari internet**. Di skrip yang kubuat, “libur nasional” dibaca dari **tabel `libur_nasional`** di database:
+
+```php
+$res_libur = mysqli_query($koneksi,
+  "SELECT tgl FROM libur_nasional WHERE tgl BETWEEN '$awal' AND '$akhir'");
+while($r=mysqli_fetch_row($res_libur)){ $libur[$r[0]] = true; }
+```
+
+Lalu dipakai saat menghitung **fallback hari efektif** (mode weekdays 5/6 hari). Artinya:
+
+* Jika tabel **`hari_efektif`** kamu **terisi** untuk TA & rentang tsb → sistem **memakai `hari_efektif` apa adanya** (diasumsikan sudah tidak memasukkan hari libur).
+* Jika **tidak terisi** → sistem hitung weekdays (5/6 hari sekolah) **dikurangi** tanggal pada `libur_nasional`.
+
+## Mau libur nasional selalu dipotong juga saat pakai `hari_efektif`?
+
+Tambahkan filter kecil setelah `$efektif` dibentuk:
+
+```php
+// setelah $efektif selesai diisi (baik dari hari_efektif atau fallback):
+if (!empty($libur)) {
+  $efektif = array_values(array_filter($efektif, function($tgl) use ($libur){
+    return empty($libur[$tgl]); // buang tanggal yang ada di libur_nasional
+  }));
+}
+```
+
+## Cara ngisinya gimana?
+
+* **Manual**: isi tabel `libur_nasional (tgl DATE PRIMARY KEY, keterangan VARCHAR)` lewat UI/SQL, contoh:
+
+  ```sql
+  INSERT INTO libur_nasional (tgl, keterangan)
+  VALUES ('2025-06-01','Hari Lahir Pancasila'), ('2025-06-06','Idul Adha');
+  ```
+* **Recommended (lebih nyaman)**: buat menu “Pengaturan Kalender”:
+
+  * Toggle **5/6 hari sekolah**, set **tanggal mulai efektif**.
+  * CRUD **Libur Nasional** (tambah/hapus).
+  * (Opsional) **Import ICS**: tombol untuk unggah file kalender libur (format .ics) lalu isi massal `libur_nasional`.
+  * Tombol **Generate `hari_efektif`** untuk satu TA berdasarkan aturan di atas (sekali klik).
+
+Kalau kamu mau, aku bisa sekalian bikinkan halaman kecil “Pengaturan Kalender” + endpoint import ICS supaya libur nasionalnya gampang di-maintain.
