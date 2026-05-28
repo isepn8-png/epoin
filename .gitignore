@@ -33,3 +33,14 @@ import_siswa.xlsx
 admin/uploads/*
 !admin/uploads/.gitkeep
 import_siswa.xlsx
+
+# IDE
+.vscode/
+
+# Dangerous tools — JANGAN deploy ke production
+admin/phpinfo.php
+admin/tools/reset_epoin.php
+
+# Server-specific deploy files (dibuat manual di VPS, bukan dari repo)
+webhook.php
+deploy.sh
