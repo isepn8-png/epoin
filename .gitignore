@@ -41,6 +41,8 @@ import_siswa.xlsx
 admin/phpinfo.php
 admin/tools/reset_epoin.php
 
-# Server-specific deploy files (dibuat manual di VPS, bukan dari repo)
-webhook.php
+# deploy.sh dibuat manual di VPS (bukan dari repo) — server-specific
 deploy.sh
+
+# webhook.php di-commit ke repo (secret dibaca dari .env, aman)
+# webhook.php
