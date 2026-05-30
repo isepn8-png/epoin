@@ -398,44 +398,67 @@
     /* ====== Theme Picker UI ====== */
     .theme-picker-wrap{ position:relative; display:inline-flex; }
     .theme-palette{
-      display:none; position:absolute; right:0; top:44px;
-      background: rgba(255,255,255,.92);
-      -webkit-backdrop-filter: saturate(140%) blur(14px);
-      backdrop-filter: saturate(140%) blur(14px);
-      border-radius:14px; padding:8px 10px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.06);
-      z-index:100; gap:8px; flex-direction:row;
-      animation: pickerFadeIn .2s ease;
+      display:none;
+      position:absolute; right:-8px; top:50px;
+      background: rgba(255,255,255,.95);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      backdrop-filter: saturate(180%) blur(20px);
+      border-radius:20px; padding:12px 14px 10px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06);
+      z-index:200; flex-direction:column; gap:10px; min-width:160px;
+      animation: pickerFadeIn .22s cubic-bezier(.2,.7,.2,1.1);
     }
     [data-theme="dark"] .theme-palette{
-      background: rgba(30,41,59,.92);
-      box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.08);
+      background: rgba(15,23,42,.95);
+      box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.1);
     }
     .theme-palette.show{ display:flex; }
-    @keyframes pickerFadeIn{ from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .palette-title{
+      font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase;
+      color:var(--muted); margin-bottom:2px; text-align:center;
+    }
+    @keyframes pickerFadeIn{ from{opacity:0;transform:translateY(-8px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+    .palette-row{ display:flex; flex-direction:row; gap:10px; align-items:center; justify-content:center; }
+
+    /* ==== FIX UTAMA: span butuh display:inline-block untuk width/height ==== */
     .theme-dot{
-      width:28px; height:28px; border-radius:50%;
-      border:2.5px solid transparent; cursor:pointer;
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+      display:inline-block;
+      width:34px; height:34px; border-radius:50%;
+      border:3px solid transparent; cursor:pointer; flex-shrink:0;
+      transition: transform .22s cubic-bezier(.2,.7,.2,1.1), border-color .2s ease, box-shadow .2s ease;
       position:relative;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
     }
-    .theme-dot:hover{ transform:scale(1.18); }
+    .theme-dot:hover{ transform:scale(1.22) translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.25); }
     .theme-dot.active{
-      border-color: var(--text);
-      box-shadow: 0 0 0 2px rgba(255,255,255,.4);
-      transform: scale(1.08);
+      border-color: #fff;
+      box-shadow: 0 0 0 2px var(--btn), 0 6px 16px rgba(0,0,0,.3);
+      transform: scale(1.1);
     }
-    .theme-dot[data-color="blue"]{ background: linear-gradient(135deg, #60a5fa, #2563eb); }
-    .theme-dot[data-color="purple"]{ background: linear-gradient(135deg, #a78bfa, #7c3aed); }
-    .theme-dot[data-color="emerald"]{ background: linear-gradient(135deg, #34d399, #059669); }
-    .theme-dot[data-color="amber"]{ background: linear-gradient(135deg, #fbbf24, #d97706); }
-    .theme-dot[data-color="slate"]{ background: linear-gradient(135deg, #94a3b8, #475569); }
     .theme-dot::after{
-      content:'\2713'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-      color:#fff; font-size:12px; font-weight:900; opacity:0; transition: opacity .2s;
-      text-shadow: 0 1px 2px rgba(0,0,0,.4);
+      content:'\2713';
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      color:#fff; font-size:14px; font-weight:900; opacity:0;
+      transition: opacity .2s;
+      text-shadow: 0 1px 3px rgba(0,0,0,.5);
+      line-height:1;
     }
     .theme-dot.active::after{ opacity:1; }
+
+    .theme-dot[data-color="blue"]  { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 60%, #1d4ed8 100%); }
+    .theme-dot[data-color="purple"]{ background: linear-gradient(135deg, #c084fc 0%, #9333ea 50%, #7c3aed 100%); }
+    .theme-dot[data-color="emerald"]{ background: linear-gradient(135deg, #34d399 0%, #059669 50%, #047857 100%); }
+    .theme-dot[data-color="amber"] { background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #d97706 100%); }
+    .theme-dot[data-color="crimson"]{ background: linear-gradient(135deg, #f9a8d4 0%, #e11d48 50%, #9f1239 100%); }
+
+    .dot-label{
+      font-size:9px; font-weight:700; text-align:center; margin-top:4px;
+      color:var(--muted); letter-spacing:.3px; white-space:nowrap;
+    }
+    .dot-wrap{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+
 
     /* ====== Color Theme: Royal Purple ====== */
     [data-color="purple"]{
@@ -490,22 +513,22 @@
     [data-color="amber"] .select-role:focus-within{ box-shadow:0 0 0 3px rgba(217,119,6,.30), 0 10px 28px rgba(0,0,0,.18); }
     [data-color="amber"] .select-role.is-selected{ box-shadow:0 8px 28px rgba(217,119,6,.28), inset 0 0 0 1px rgba(255,255,255,.2); }
 
-    /* ====== Color Theme: Slate Midnight ====== */
-    [data-color="slate"]{
-      --bg-grad: linear-gradient(135deg,#f8fafc 0%,#e2e8f0 22%,#cbd5e1 48%,#94a3b8 74%,#64748b 100%);
-      --btn:#475569; --btn-hover:#334155;
-      --accent:#64748b; --accent-light:#94a3b8; --accent-glow:rgba(71,85,105,.35);
+    /* ====== Color Theme: Crimson Flame (Ganti Slate) ====== */
+    [data-color="crimson"]{
+      --bg-grad: linear-gradient(135deg,#fff1f2 0%,#fecdd3 20%,#fda4af 42%,#fb7185 65%,#f43f5e 82%,#e11d48 100%);
+      --btn:#e11d48; --btn-hover:#be123c;
+      --accent:#e11d48; --accent-light:#fb7185; --accent-glow:rgba(225,29,72,.38);
     }
-    [data-color="slate"][data-theme="dark"]{
-      --bg-grad: linear-gradient(135deg,#020617 0%, #0f172a 45%, #1e293b 100%);
-      --card-bg: rgba(2,6,23,.62);
-      --btn:#94a3b8; --btn-hover:#64748b;
-      --accent:#94a3b8; --accent-light:#cbd5e1; --accent-glow:rgba(148,163,184,.35);
+    [data-color="crimson"][data-theme="dark"]{
+      --bg-grad: linear-gradient(135deg,#1a0010 0%, #3b0022 30%, #6b0031 60%, #9f1239 100%);
+      --card-bg: rgba(26,0,16,.65);
+      --btn:#fb7185; --btn-hover:#e11d48;
+      --accent:#fb7185; --accent-light:#fda4af; --accent-glow:rgba(251,113,133,.38);
     }
-    [data-color="slate"] .about-btn{ --abg1:#64748b; --abg2:#475569; --abg3:#334155; }
-    [data-color="slate"] .home-btn.icon-only{ background:linear-gradient(135deg,#94a3b8,#475569); box-shadow:0 12px 28px rgba(71,85,105,.35), inset 0 0 0 1px rgba(255,255,255,.18); }
-    [data-color="slate"] .select-role:focus-within{ box-shadow:0 0 0 3px rgba(71,85,105,.30), 0 10px 28px rgba(0,0,0,.18); }
-    [data-color="slate"] .select-role.is-selected{ box-shadow:0 8px 28px rgba(71,85,105,.28), inset 0 0 0 1px rgba(255,255,255,.2); }
+    [data-color="crimson"] .about-btn{ --abg1:#fb7185; --abg2:#e11d48; --abg3:#be123c; }
+    [data-color="crimson"] .home-btn.icon-only{ background:linear-gradient(135deg,#fb7185,#e11d48); box-shadow:0 12px 28px rgba(225,29,72,.38), inset 0 0 0 1px rgba(255,255,255,.18); }
+    [data-color="crimson"] .select-role:focus-within{ box-shadow:0 0 0 3px rgba(225,29,72,.30), 0 10px 28px rgba(0,0,0,.18); }
+    [data-color="crimson"] .select-role.is-selected{ box-shadow:0 8px 28px rgba(225,29,72,.28), inset 0 0 0 1px rgba(255,255,255,.2); }
   </style>
 </head>
 <body>
@@ -517,11 +540,29 @@
       <div class="theme-picker-wrap">
         <button id="colorToggle" class="icon-btn" title="Pilih tema warna"><span>🎨</span></button>
         <div id="themePalette" class="theme-palette">
-          <span class="theme-dot active" data-color="blue" title="Ocean Blue"></span>
-          <span class="theme-dot" data-color="purple" title="Royal Purple"></span>
-          <span class="theme-dot" data-color="emerald" title="Emerald Forest"></span>
-          <span class="theme-dot" data-color="amber" title="Sunset Amber"></span>
-          <span class="theme-dot" data-color="slate" title="Slate Midnight"></span>
+          <div class="palette-title">Pilih Tema</div>
+          <div class="palette-row">
+            <div class="dot-wrap">
+              <span class="theme-dot active" data-color="blue" title="Ocean Blue"></span>
+              <div class="dot-label">Blue</div>
+            </div>
+            <div class="dot-wrap">
+              <span class="theme-dot" data-color="purple" title="Royal Purple"></span>
+              <div class="dot-label">Purple</div>
+            </div>
+            <div class="dot-wrap">
+              <span class="theme-dot" data-color="emerald" title="Emerald Forest"></span>
+              <div class="dot-label">Emerald</div>
+            </div>
+            <div class="dot-wrap">
+              <span class="theme-dot" data-color="amber" title="Sunset Amber"></span>
+              <div class="dot-label">Amber</div>
+            </div>
+            <div class="dot-wrap">
+              <span class="theme-dot" data-color="crimson" title="Crimson Flame"></span>
+              <div class="dot-label">Crimson</div>
+            </div>
+          </div>
         </div>
       </div>
       <button id="themeToggle" class="icon-btn" title="Toggle tema"><span id="themeIcon">🌙</span></button>
