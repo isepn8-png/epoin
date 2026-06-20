@@ -377,7 +377,11 @@ $judul = "SURAT PERINGATAN ".($roman[$sp] ?? 'I')." (SP-".($angka[$sp] ?? '1')."
 $dasarAturan = "Berdasarkan Tata Tertib Peserta Didik yang berlaku di sekolah pada Tahun Pelajaran ".$taTeks." ".$semesterLabel.", serta hasil evaluasi kepatuhan terhadap peraturan sekolah, bersama ini kami menyampaikan pemberitahuan resmi terkait pelanggaran yang dilakukan oleh peserta didik yang bersangkutan.";
 $pernyataan  = "Sehubungan dengan uraian pada bagian <b>Alasan Penerbitan</b> serta hasil penilaian saldo poin (prestasi dikurangi pelanggaran) dalam sistem, sekolah menetapkan untuk menerbitkan <b>".$judul."</b> kepada peserta didik tersebut.";
 $ajakan      = "Melalui surat ini, kami memohon kerja sama Bapak/Ibu Orang Tua/Wali untuk melakukan pembinaan di rumah, mendorong perbaikan sikap, serta memastikan putra/putrinya menaati seluruh tata tertib sekolah dan mengikuti program pembinaan yang ditetapkan.";
-$konsekuensi = "Apabila setelah diterbitkannya surat ini terjadi pelanggaran kembali atau tidak terdapat perbaikan yang berarti, maka sekolah akan melanjutkan ke tahap peringatan berikutnya (SP-2) sesuai ketentuan yang berlaku.";
+$nextSPLabels = ['SP1'=>'SP-2','SP2'=>'SP-3','SP3'=>'SP-4','SP4'=>null];
+$nextSP = $nextSPLabels[$sp] ?? null;
+$konsekuensi = $nextSP
+  ? "Apabila setelah diterbitkannya surat ini terjadi pelanggaran kembali atau tidak terdapat perbaikan yang berarti, maka sekolah akan melanjutkan ke tahap peringatan berikutnya (".$nextSP.") sesuai ketentuan yang berlaku."
+  : "Apabila setelah diterbitkannya surat ini tidak terdapat perbaikan yang berarti, sekolah berwenang mengambil keputusan lebih lanjut termasuk pengembalian peserta didik kepada orang tua sesuai ketentuan yang berlaku.";
 $penutup     = "Demikian surat peringatan ini kami sampaikan untuk menjadi perhatian. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.";
 
 // ===== Data penandatangan =====
