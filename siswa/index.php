@@ -35,7 +35,7 @@ $first_esc = mysqli_real_escape_string($koneksi,$first);
 $last_esc  = mysqli_real_escape_string($koneksi,$last);
 
 /* ===== TA aktif ===== */
-$ta_aktif = mysqli_query($koneksi,"SELECT ta_id, ta_nama FROM ta WHERE ta_status='aktif' ORDER BY ta_id DESC LIMIT 1");
+$ta_aktif = mysqli_query($koneksi,"SELECT ta_id, ta_nama FROM ta WHERE ta_status='1' ORDER BY ta_id DESC LIMIT 1");
 $ta_aktif = mysqli_fetch_assoc($ta_aktif);
 
 /* ===== kelas siswa terakhir ===== */
