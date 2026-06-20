@@ -186,6 +186,67 @@ if($qrank){
   mysqli_free_result($qrank);
 }
 
+/* ======== SP DISTRIBUTION & EARLY WARNING (per TA terpilih) ======== */
+$spDist = ['aman'=>0,'pembinaan'=>0,'sp1'=>0,'sp2'=>0,'sp3'=>0,'sp4'=>0];
+$earlyWarning = [];
+
+$qSaldo = db_query($koneksi, "
+  SELECT s.siswa_id, s.siswa_nama, s.siswa_nis,
+         IFNULL(pres.total,0) - IFNULL(pel.total,0) AS saldo
+  FROM kelas_siswa ks
+  JOIN siswa s ON ks.ks_siswa = s.siswa_id
+  JOIN kelas k  ON ks.ks_kelas = k.kelas_id AND k.kelas_ta = ".(int)$TA_SELECTED."
+  LEFT JOIN (
+    SELECT ip.siswa, SUM(pr.prestasi_point) AS total
+    FROM input_prestasi ip
+    JOIN prestasi pr ON pr.prestasi_id = ip.prestasi
+    JOIN kelas k2 ON ip.kelas = k2.kelas_id AND k2.kelas_ta = ".(int)$TA_SELECTED."
+    GROUP BY ip.siswa
+  ) pres ON pres.siswa = s.siswa_id
+  LEFT JOIN (
+    SELECT ig.siswa, SUM(pl.pelanggaran_point) AS total
+    FROM input_pelanggaran ig
+    JOIN pelanggaran pl ON pl.pelanggaran_id = ig.pelanggaran
+    JOIN kelas k3 ON ig.kelas = k3.kelas_id AND k3.kelas_ta = ".(int)$TA_SELECTED."
+    GROUP BY ig.siswa
+  ) pel ON pel.siswa = s.siswa_id
+  GROUP BY s.siswa_id, s.siswa_nama, s.siswa_nis
+  ORDER BY saldo ASC
+");
+if ($qSaldo) {
+  while ($r = mysqli_fetch_assoc($qSaldo)) {
+    $saldo = (int)$r['saldo'];
+    $neg   = max(0, -$saldo);
+    if ($neg === 0) {
+      $spDist['aman']++;
+    } elseif ($neg <= 20) {
+      $spDist['pembinaan']++;
+      if ($neg >= 16) {
+        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP1','jarak'=>21-$neg];
+      }
+    } elseif ($neg <= 40) {
+      $spDist['sp1']++;
+      if ($neg >= 36) {
+        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP2','jarak'=>41-$neg];
+      }
+    } elseif ($neg <= 60) {
+      $spDist['sp2']++;
+      if ($neg >= 56) {
+        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP3','jarak'=>61-$neg];
+      }
+    } elseif ($neg <= 80) {
+      $spDist['sp3']++;
+      if ($neg >= 76) {
+        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP4','jarak'=>81-$neg];
+      }
+    } else {
+      $spDist['sp4']++;
+    }
+  }
+  mysqli_free_result($qSaldo);
+}
+usort($earlyWarning, function($a,$b){ return $a['jarak'] - $b['jarak']; });
+
 /* ======== AKTIVITAS PENERIMA POIN TERBARU (SEMUA WAKTU) ======== */
 $sqlAktAll = "
   (SELECT 'Prestasi' AS tipe, ip.waktu AS tgl, s.siswa_nama AS siswa, pr.prestasi_nama AS nama, pr.prestasi_point AS poin
@@ -653,6 +714,87 @@ if($qa){
       </div>
     </div>
 
+    <!-- SP DISTRIBUTION + EARLY WARNING -->
+    <div class="row">
+      <div class="col-lg-5">
+        <div class="box box-modern">
+          <div class="box-header">
+            <h3 class="box-title"><i class="fa fa-pie-chart"></i> Distribusi Tahap SP Siswa
+              <small class="text-muted-600" style="font-weight:400;margin-left:4px">(TA: <?php echo htmlspecialchars($ta_row['ta_nama'] ?? ''); ?>)</small>
+            </h3>
+          </div>
+          <div class="box-body">
+            <?php $totalSiswaKelas = array_sum($spDist); ?>
+            <?php if ($totalSiswaKelas === 0): ?>
+              <p class="text-center text-muted" style="padding:20px">Belum ada data siswa pada TA ini.</p>
+            <?php else: ?>
+              <div id="spDonut" style="min-height:260px"></div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px">
+                <span class="badge-soft" style="background:#e8fff3;color:#059669">Aman: <?php echo $spDist['aman']; ?></span>
+                <span class="badge-soft" style="background:#e0f2fe;color:#0369a1">Pembinaan: <?php echo $spDist['pembinaan']; ?></span>
+                <span class="badge-soft" style="background:#fef9c3;color:#854d0e">SP1: <?php echo $spDist['sp1']; ?></span>
+                <span class="badge-soft" style="background:#ffedd5;color:#9a3412">SP2: <?php echo $spDist['sp2']; ?></span>
+                <span class="badge-soft" style="background:#fee2e2;color:#991b1b">SP3: <?php echo $spDist['sp3']; ?></span>
+                <span class="badge-soft" style="background:#fce7f3;color:#9d174d">SP4: <?php echo $spDist['sp4']; ?></span>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <div class="box box-modern box-warning">
+          <div class="box-header">
+            <h3 class="box-title">
+              <i class="fa fa-exclamation-triangle" style="color:#d97706"></i>
+              Early Warning &mdash; Mendekati Ambang SP
+              <small class="text-muted-600" style="font-weight:400;margin-left:4px">(dalam jarak &le;5 poin dari naik level)</small>
+            </h3>
+          </div>
+          <div class="box-body" style="padding:8px 12px">
+            <?php if (empty($earlyWarning)): ?>
+              <div class="text-center" style="padding:20px;color:#059669">
+                <i class="fa fa-check-circle fa-2x"></i><br>
+                <span style="margin-top:6px;display:block">Tidak ada siswa mendekati ambang SP saat ini.</span>
+              </div>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table table-modern table-bordered table-hover" style="font-size:13px;margin-bottom:0">
+                  <thead>
+                    <tr>
+                      <th>Nama Siswa</th>
+                      <th>NIS</th>
+                      <th style="width:70px;text-align:center">Saldo</th>
+                      <th style="width:60px;text-align:center">Mendekati</th>
+                      <th style="width:90px;text-align:center">Jarak</th>
+                      <th style="width:40px"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <?php
+                    $ewBadge = ['SP1'=>'badge-soft-amber','SP2'=>'badge-soft-red','SP3'=>'badge-soft-red','SP4'=>'badge-soft-red'];
+                    foreach ($earlyWarning as $ew):
+                  ?>
+                    <tr>
+                      <td><?php echo htmlspecialchars($ew['siswa_nama']); ?></td>
+                      <td><?php echo htmlspecialchars($ew['siswa_nis']); ?></td>
+                      <td style="text-align:center"><span class="badge-soft badge-soft-red"><?php echo $ew['saldo']; ?></span></td>
+                      <td style="text-align:center"><span class="badge-soft <?php echo $ewBadge[$ew['mendekati']] ?? 'badge-soft-red'; ?>"><?php echo htmlspecialchars($ew['mendekati']); ?></span></td>
+                      <td style="text-align:center"><strong><?php echo $ew['jarak']; ?></strong> poin</td>
+                      <td style="text-align:center">
+                        <a href="siswa_riwayat.php?id=<?php echo $ew['siswa_id']; ?>" class="btn btn-xs btn-info" title="Lihat Riwayat"><i class="fa fa-eye"></i></a>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- GRAFIK -->
     <div class="box box-modern">
       <div class="box-header">
@@ -1066,6 +1208,38 @@ if($qa){
       exporting: { enabled: true },
       credits:   { enabled: false },
       accessibility: { enabled: true, description: 'Garis merah menunjukkan jumlah pelanggaran per bulan, hijau untuk prestasi.' }
+    });
+  })();
+</script>
+
+<script>
+  // ====== GRAFIK DISTRIBUSI SP (Highcharts Donut) ======
+  (function(){
+    var spData = <?php echo json_encode([
+      ['name'=>'Aman',      'y'=>$spDist['aman'],      'color'=>'#059669'],
+      ['name'=>'Pembinaan', 'y'=>$spDist['pembinaan'], 'color'=>'#0ea5e9'],
+      ['name'=>'SP1',       'y'=>$spDist['sp1'],       'color'=>'#ca8a04'],
+      ['name'=>'SP2',       'y'=>$spDist['sp2'],       'color'=>'#ea580c'],
+      ['name'=>'SP3',       'y'=>$spDist['sp3'],       'color'=>'#dc2626'],
+      ['name'=>'SP4',       'y'=>$spDist['sp4'],       'color'=>'#9d174d'],
+    ]); ?>;
+    var hasData = spData.some(function(d){ return d.y > 0; });
+    if (!hasData || !document.getElementById('spDonut')) return;
+    Highcharts.chart('spDonut', {
+      chart:   { type:'pie', animation:{ duration:700 }, margin:[4,0,4,0], spacing:[0,0,0,0] },
+      title:   { text:null },
+      tooltip: { pointFormat:'<b>{point.name}</b>: {point.y} siswa ({point.percentage:.1f}%)' },
+      plotOptions: {
+        pie:{
+          innerSize:'52%', startAngle:-90,
+          dataLabels:{ enabled:true, format:'<b>{point.name}</b>: {point.y}', style:{ fontWeight:'700', textOutline:'none', fontSize:'11px' } },
+          showInLegend:false
+        }
+      },
+      series:[{ name:'Siswa', colorByPoint:true, data:spData }],
+      credits:    { enabled:false },
+      exporting:  { enabled:false },
+      accessibility:{ enabled:false }
     });
   })();
 </script>
