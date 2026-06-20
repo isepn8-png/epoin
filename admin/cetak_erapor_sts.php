@@ -21,10 +21,10 @@ if (!$koneksi && file_exists(__DIR__ . '/../koneksi.php')) {
 }
 
 // graceful if masih belum ada koneksi
+// Kredensial TIDAK boleh di-hardcode di sini — koneksi resmi berasal dari
+// koneksi.php (membaca .env). Jika $koneksi tetap kosong, hentikan dengan aman.
 if (!isset($koneksi) || !$koneksi) {
-  // koneksi mandiri (ubah sesuai server Anda jika perlu)
-  $koneksi = @mysqli_connect('localhost','root','','smpn1gun_epoint');
-  if (!$koneksi) { die('DB gagal terkoneksi. Sesuaikan kredensial di file ini.'); }
+  die('DB gagal terkoneksi. Periksa konfigurasi koneksi.php / .env.');
 }
 @mysqli_set_charset($koneksi,'utf8mb4');
 if (function_exists('mysqli_report')) { @mysqli_report(MYSQLI_REPORT_OFF); }
