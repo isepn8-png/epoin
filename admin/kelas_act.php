@@ -1,8 +1,18 @@
-<?php 
+<?php
 include '../koneksi.php';
-$nama  = $_POST['nama'];
-$jurusan = $_POST['jurusan'];
-$ta = $_POST['ta'];
 
-mysqli_query($koneksi, "insert into kelas values (NULL,'$nama ','$jurusan','$ta')");
-header("location:kelas.php");
+$nama    = trim((string) ($_POST['nama'] ?? ''));
+$jurusan = (string) ($_POST['jurusan'] ?? '');
+$ta      = (string) ($_POST['ta'] ?? '');
+
+// pertahankan perilaku lama: ada spasi di belakang nama kelas
+$nama_db = $nama . ' ';
+
+$stmt = mysqli_prepare($koneksi, 'INSERT INTO kelas VALUES (NULL, ?, ?, ?)');
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, 'sss', $nama_db, $jurusan, $ta);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+}
+
+header('location:kelas.php');

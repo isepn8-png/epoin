@@ -1,12 +1,21 @@
-<?php 
+<?php
 include '../koneksi.php';
-$nama  = $_POST['nama'];
-$status = $_POST['status'];
 
+$nama   = trim((string) ($_POST['nama'] ?? ''));
+$status = (string) ($_POST['status'] ?? '');
 
-if($status == 1){
-	mysqli_query($koneksi,"update ta set ta_status='0'");
+if ($status == 1) {
+    mysqli_query($koneksi, "update ta set ta_status='0'");
 }
 
-mysqli_query($koneksi, "insert into ta values (NULL,'$nama ','$status')");
-header("location:ta.php");
+// pertahankan perilaku lama: ada spasi di belakang nama TA
+$nama_db = $nama . ' ';
+
+$stmt = mysqli_prepare($koneksi, 'INSERT INTO ta VALUES (NULL, ?, ?)');
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, 'ss', $nama_db, $status);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+}
+
+header('location:ta.php');
