@@ -620,6 +620,39 @@ if($qa){
 .ew-critical td:first-child{font-weight:700}
 .ew-warn td{background:#fffbeb!important;border-left:3px solid #f59e0b!important}
 
+/* ===== Early Warning panel: compact, paginated, filterable ===== */
+@media(min-width:992px){
+  .sp-zone-row{display:flex;flex-wrap:wrap}
+  .sp-zone-row>[class*="col-"]{display:flex}
+  .sp-zone-row .box{width:100%;display:flex;flex-direction:column}
+  .sp-zone-row .box>.box-body{flex:1 1 auto;display:flex;flex-direction:column}
+  .sp-donut-body{justify-content:center}
+}
+.ew-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:2px 0 10px}
+.ew-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ew-chip{cursor:pointer;border:1px solid #e5e7eb;background:#fff;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;color:#64748b;transition:all .15s;user-select:none;white-space:nowrap}
+.ew-chip:hover{border-color:#cbd5e1;background:#f8fafc}
+.ew-chip.active{background:#1e293b;border-color:#1e293b;color:#fff}
+.ew-chip .c{opacity:.65;font-weight:800;margin-left:4px}
+.ew-sort{margin-left:auto;display:flex;align-items:center;gap:6px}
+.ew-sort select{border:1px solid #e5e7eb;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600;color:#475569;background:#fff;outline:none;cursor:pointer}
+.ew-tablewrap{flex:1 1 auto}
+.ew-cell-name{font-weight:700;color:#1e293b;line-height:1.25}
+.ew-cell-nis{font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.02em}
+.ew-sisa{display:inline-block;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:800;white-space:nowrap}
+.ew-sisa-1{background:#fee2e2;color:#b91c1c}
+.ew-sisa-2{background:#ffedd5;color:#c2410c}
+.ew-sisa-3{background:#fef9c3;color:#a16207}
+.ew-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 0;margin-top:auto;border-top:1px solid #f1f5f9}
+.ew-foot-info{font-size:12px;color:#94a3b8;font-weight:600}
+.ew-pager{display:flex;gap:4px}
+.ew-pgbtn{min-width:30px;height:30px;padding:0 6px;border:1px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.ew-pgbtn:hover:not(:disabled){border-color:#cbd5e1;background:#f8fafc}
+.ew-pgbtn:disabled{opacity:.4;cursor:not-allowed}
+.ew-pgbtn.active{background:#1e293b;border-color:#1e293b;color:#fff}
+.ew-info-i{color:#cbd5e1;cursor:help;font-size:12px;margin-left:2px}
+.ew-empty-filter{text-align:center;padding:24px;color:#94a3b8;font-weight:500}
+
 /* ===== BOX MODERN unified ===== */
 .box-modern{border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.055)!important;border:1px solid #f0f4f8!important}
 .box-modern>.box-header{background:#fff;border-bottom:1px solid #f0f4f8;padding:12px 16px}
@@ -772,7 +805,7 @@ if($qa){
     </div>
 
     <!-- SP DISTRIBUTION + EARLY WARNING -->
-    <div class="row">
+    <div class="row sp-zone-row">
       <div class="col-lg-5">
         <div class="box box-modern">
           <div class="box-header">
@@ -780,7 +813,7 @@ if($qa){
               <small class="text-muted-600" style="font-weight:400;margin-left:4px">(TA: <?php echo htmlspecialchars($ta_row['ta_nama'] ?? ''); ?>)</small>
             </h3>
           </div>
-          <div class="box-body">
+          <div class="box-body sp-donut-body">
             <?php $totalSiswaKelas = array_sum($spDist); ?>
             <?php if ($totalSiswaKelas === 0): ?>
               <p class="text-center text-muted" style="padding:20px">Belum ada data siswa pada TA ini.</p>
@@ -810,50 +843,142 @@ if($qa){
               <?php endif; ?>
             </h3>
           </div>
-          <div class="box-body" style="padding:8px 12px">
+          <div class="box-body" style="padding:10px 14px">
             <?php if (empty($earlyWarning)): ?>
-              <div class="text-center" style="padding:20px;color:#059669">
-                <i class="fa fa-check-circle fa-2x"></i><br>
-                <span style="margin-top:6px;display:block">Tidak ada siswa mendekati ambang SP saat ini.</span>
+              <div class="text-center" style="padding:30px 20px;color:#059669;margin:auto">
+                <i class="fa fa-check-circle fa-3x"></i><br>
+                <span style="margin-top:10px;display:block;font-weight:600">Tidak ada siswa mendekati ambang SP saat ini.</span>
+                <span style="font-size:12px;color:#94a3b8">Semua siswa berada di zona aman dari kenaikan level peringatan.</span>
               </div>
             <?php else: ?>
-              <div class="table-responsive">
-                <table class="table table-modern table-bordered table-hover" style="font-size:13px;margin-bottom:0">
+              <!-- Toolbar: filter chips + sort -->
+              <div class="ew-toolbar">
+                <div class="ew-chips" id="ewChips"></div>
+                <div class="ew-sort">
+                  <i class="fa fa-sort-amount-desc" style="color:#94a3b8;font-size:11px"></i>
+                  <select id="ewSort" aria-label="Urutkan">
+                    <option value="prioritas">Prioritas</option>
+                    <option value="saldo">Saldo terendah</option>
+                    <option value="nama">Nama A–Z</option>
+                  </select>
+                </div>
+              </div>
+              <div class="ew-tablewrap table-responsive">
+                <table class="table table-modern table-hover" style="font-size:13px;margin-bottom:0">
                   <thead>
                     <tr>
-                      <th>Nama Siswa</th>
-                      <th>NIS</th>
-                      <th style="width:70px;text-align:center">Saldo</th>
-                      <th style="width:60px;text-align:center">Mendekati</th>
-                      <th style="width:90px;text-align:center">Jarak</th>
-                      <th style="width:40px"></th>
+                      <th>Siswa</th>
+                      <th style="width:80px;text-align:center">Saldo</th>
+                      <th style="width:92px;text-align:center">Mendekati</th>
+                      <th style="width:98px;text-align:center">Sisa<i class="fa fa-question-circle-o ew-info-i" title="Sisa poin pelanggaran sebelum siswa naik ke level SP berikutnya. Makin kecil makin mendesak — '1 poin' berarti satu pelanggaran lagi siswa naik level."></i></th>
+                      <th style="width:44px"></th>
                     </tr>
                   </thead>
-                  <tbody>
-                  <?php
-                    $ewBadge = ['SP1'=>'badge-soft-amber','SP2'=>'badge-soft-red','SP3'=>'badge-soft-red','SP4'=>'badge-soft-red'];
-                    foreach ($earlyWarning as $ew):
-                      $ewRow = $ew['jarak'] <= 2 ? 'ew-critical' : 'ew-warn';
-                  ?>
-                    <tr class="<?php echo $ewRow; ?>">
-                      <td><?php echo htmlspecialchars($ew['siswa_nama']); ?></td>
-                      <td><?php echo htmlspecialchars($ew['siswa_nis']); ?></td>
-                      <td style="text-align:center"><span class="badge-soft badge-soft-red"><?php echo $ew['saldo']; ?></span></td>
-                      <td style="text-align:center"><span class="badge-soft <?php echo $ewBadge[$ew['mendekati']] ?? 'badge-soft-red'; ?>"><?php echo htmlspecialchars($ew['mendekati']); ?></span></td>
-                      <td style="text-align:center"><strong><?php echo $ew['jarak']; ?></strong> poin</td>
-                      <td style="text-align:center">
-                        <a href="siswa_riwayat.php?id=<?php echo $ew['siswa_id']; ?>" class="btn btn-xs btn-info" title="Lihat Riwayat"><i class="fa fa-eye"></i></a>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                  </tbody>
+                  <tbody id="ewBody"></tbody>
                 </table>
+              </div>
+              <div class="ew-foot">
+                <span class="ew-foot-info" id="ewInfo"></span>
+                <div class="ew-pager" id="ewPager"></div>
               </div>
             <?php endif; ?>
           </div>
         </div>
       </div>
     </div>
+
+    <?php if (!empty($earlyWarning)): ?>
+    <script>
+    (function(){
+      var DATA = <?php echo json_encode(array_map(function($e){
+        return ['n'=>$e['siswa_nama'],'nis'=>$e['siswa_nis'],'s'=>(int)$e['saldo'],'m'=>$e['mendekati'],'j'=>(int)$e['jarak'],'id'=>(int)$e['siswa_id']];
+      }, $earlyWarning), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+      var SEV = {SP1:1, SP2:2, SP3:3, SP4:4};
+      var BADGE = {SP1:'badge-soft-amber', SP2:'badge-soft-amber', SP3:'badge-soft-red', SP4:'badge-soft-red'};
+      var PER_PAGE = 6;
+      var state = {filter:'ALL', sort:'prioritas', page:1};
+      var body = document.getElementById('ewBody'),
+          chips = document.getElementById('ewChips'),
+          pager = document.getElementById('ewPager'),
+          info  = document.getElementById('ewInfo'),
+          sortSel = document.getElementById('ewSort');
+      if (!body) return;
+
+      function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+      function counts(){
+        var c = {ALL:DATA.length, SP1:0, SP2:0, SP3:0, SP4:0};
+        DATA.forEach(function(d){ if (c[d.m] !== undefined) c[d.m]++; });
+        return c;
+      }
+      function buildChips(){
+        var c = counts(), order = ['ALL','SP4','SP3','SP2','SP1'], html = '';
+        order.forEach(function(k){
+          if (k !== 'ALL' && !c[k]) return;
+          var lbl = (k === 'ALL') ? 'Semua' : '&rarr; ' + k;
+          html += '<span class="ew-chip' + (state.filter === k ? ' active' : '') + '" data-f="' + k + '">' + lbl + '<span class="c">' + c[k] + '</span></span>';
+        });
+        chips.innerHTML = html;
+        chips.querySelectorAll('.ew-chip').forEach(function(el){
+          el.onclick = function(){ state.filter = el.getAttribute('data-f'); state.page = 1; render(); };
+        });
+      }
+      function filtered(){
+        var rows = (state.filter === 'ALL') ? DATA.slice() : DATA.filter(function(d){ return d.m === state.filter; });
+        if (state.sort === 'saldo')      rows.sort(function(a,b){ return a.s - b.s; });
+        else if (state.sort === 'nama')  rows.sort(function(a,b){ return a.n.localeCompare(b.n); });
+        else rows.sort(function(a,b){ return (SEV[b.m] - SEV[a.m]) || (a.j - b.j) || (a.s - b.s); });
+        return rows;
+      }
+      function render(){
+        buildChips();
+        var rows = filtered(), total = rows.length, pages = Math.max(1, Math.ceil(total / PER_PAGE));
+        if (state.page > pages) state.page = pages;
+        var start = (state.page - 1) * PER_PAGE, slice = rows.slice(start, start + PER_PAGE), html = '';
+        if (!slice.length){
+          body.innerHTML = '<tr><td colspan="5" class="ew-empty-filter">Tidak ada siswa pada filter ini.</td></tr>';
+        } else {
+          slice.forEach(function(d){
+            var sisaCls = d.j <= 1 ? 'ew-sisa-1' : (d.j <= 2 ? 'ew-sisa-2' : 'ew-sisa-3');
+            html += '<tr>' +
+              '<td><div class="ew-cell-name">' + esc(d.n) + '</div><div class="ew-cell-nis">' + esc(d.nis) + '</div></td>' +
+              '<td style="text-align:center"><span class="badge-soft badge-soft-red">' + d.s + '</span></td>' +
+              '<td style="text-align:center"><span class="badge-soft ' + (BADGE[d.m] || 'badge-soft-red') + '">' + esc(d.m) + '</span></td>' +
+              '<td style="text-align:center"><span class="ew-sisa ' + sisaCls + '">' + d.j + ' poin</span></td>' +
+              '<td style="text-align:center"><a href="siswa_riwayat.php?id=' + d.id + '" class="btn btn-xs btn-info" title="Lihat Riwayat"><i class="fa fa-eye"></i></a></td>' +
+            '</tr>';
+          });
+          body.innerHTML = html;
+        }
+        var from = total ? start + 1 : 0, to = Math.min(start + PER_PAGE, total);
+        info.textContent = 'Menampilkan ' + from + '–' + to + ' dari ' + total + ' siswa';
+        var pg = '<button class="ew-pgbtn" ' + (state.page <= 1 ? 'disabled' : '') + ' data-p="prev"><i class="fa fa-angle-left"></i></button>';
+        var win = [];
+        for (var i = 1; i <= pages; i++){
+          if (i === 1 || i === pages || Math.abs(i - state.page) <= 1) win.push(i);
+          else if (win[win.length - 1] !== '...') win.push('...');
+        }
+        win.forEach(function(p){
+          if (p === '...') pg += '<button class="ew-pgbtn" disabled>&hellip;</button>';
+          else pg += '<button class="ew-pgbtn' + (p === state.page ? ' active' : '') + '" data-p="' + p + '">' + p + '</button>';
+        });
+        pg += '<button class="ew-pgbtn" ' + (state.page >= pages ? 'disabled' : '') + ' data-p="next"><i class="fa fa-angle-right"></i></button>';
+        pager.innerHTML = pg;
+        pager.querySelectorAll('.ew-pgbtn[data-p]').forEach(function(b){
+          b.onclick = function(){
+            var p = b.getAttribute('data-p');
+            if (p === 'prev' && state.page > 1) state.page--;
+            else if (p === 'next' && state.page < pages) state.page++;
+            else if (p !== 'prev' && p !== 'next') state.page = parseInt(p, 10);
+            render();
+          };
+        });
+      }
+      sortSel.onchange = function(){ state.sort = sortSel.value; state.page = 1; render(); };
+      render();
+    })();
+    </script>
+    <?php endif; ?>
 
     <!-- ZONA: ANALITIK -->
     <div class="zone-header">
