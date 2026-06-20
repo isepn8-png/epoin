@@ -12,22 +12,43 @@
 $id = $_SESSION['id'];
 $err = $ok = null;
 if($_SERVER['REQUEST_METHOD']==='POST'){
-  $old = $_POST['old_password'] ?? '';
-  $new = $_POST['new_password'] ?? '';
-  $confirm = $_POST['confirm_password'] ?? '';
+  $old     = (string)($_POST['old_password'] ?? '');
+  $new     = (string)($_POST['new_password'] ?? '');
+  $confirm = (string)($_POST['confirm_password'] ?? '');
+  $sid     = (int)$id;
 
-  if(strlen($new) < 6) $err = "Password baru minimal 6 karakter.";
-  elseif($new !== $confirm) $err = "Konfirmasi password tidak cocok.";
+  if($sid <= 0)                 $err = "Sesi tidak valid. Silakan login ulang.";
+  elseif(strlen($new) < 6)      $err = "Password baru minimal 6 karakter.";
+  elseif($new !== $confirm)     $err = "Konfirmasi password tidak cocok.";
   else{
-    $row = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT siswa_password FROM siswa WHERE siswa_id='".intval($id)."'"));
-    $hash = $row ? $row['siswa_password'] : '';
-    // verifikasi MD5 lama (kompatibel dgn periksa_login.php)
-    $verified = (md5($old) === $hash);
+    // Ambil hash lama — prepared statement (anti SQL injection)
+    $hash = '';
+    $stmt = mysqli_prepare($koneksi,"SELECT siswa_password FROM siswa WHERE siswa_id=? LIMIT 1");
+    if($stmt){
+      mysqli_stmt_bind_param($stmt,'i',$sid);
+      mysqli_stmt_execute($stmt);
+      $res = mysqli_stmt_get_result($stmt);
+      $row = $res ? mysqli_fetch_assoc($res) : null;
+      $hash = $row ? (string)$row['siswa_password'] : '';
+      mysqli_stmt_close($stmt);
+    }
+    // Verifikasi password lama: bcrypt (akun migrasi) atau MD5 legacy — selaras periksa_login.php
+    if(preg_match('/^\$2y\$\d{2}\$/',$hash)){
+      $verified = password_verify($old,$hash);
+    }else{
+      $verified = ($hash !== '' && hash_equals($hash, md5($old)));
+    }
     if(!$verified){
       $err = "Password lama salah.";
     }else{
-      $newHash = md5($new); // kompatibel
-      mysqli_query($koneksi,"UPDATE siswa SET siswa_password='".mysqli_real_escape_string($koneksi,$newHash)."' WHERE siswa_id='".intval($id)."'");
+      // Simpan sebagai bcrypt (sekaligus upgrade hash lama)
+      $newHash = password_hash($new, PASSWORD_DEFAULT);
+      $up = mysqli_prepare($koneksi,"UPDATE siswa SET siswa_password=? WHERE siswa_id=?");
+      if($up){
+        mysqli_stmt_bind_param($up,'si',$newHash,$sid);
+        mysqli_stmt_execute($up);
+        mysqli_stmt_close($up);
+      }
       $ok = "Password berhasil diperbarui.";
     }
   }
