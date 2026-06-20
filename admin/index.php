@@ -246,6 +246,8 @@ if ($qSaldo) {
   mysqli_free_result($qSaldo);
 }
 usort($earlyWarning, function($a,$b){ return $a['jarak'] - $b['jarak']; });
+$EW_COUNT = count($earlyWarning);
+$SP_AKTIF = $spDist['sp1'] + $spDist['sp2'] + $spDist['sp3'] + $spDist['sp4'];
 
 /* ======== AKTIVITAS PENERIMA POIN TERBARU (SEMUA WAKTU) ======== */
 $sqlAktAll = "
@@ -384,18 +386,22 @@ if($qa){
   @media(max-width:576px){.qa{grid-column:span 12}}
 
   /* ===== KPI ===== */
-  .kpi-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:14px}
-  .kpi{grid-column:span 3;min-height:112px;border-radius:18px;color:#fff;position:relative;overflow:hidden;padding:16px 16px 14px;box-shadow:0 8px 22px rgba(0,0,0,.08);transition:transform .18s ease, box-shadow .18s ease}
-  .kpi:hover{transform:translateY(-2px);box-shadow:0 16px 30px rgba(0,0,0,.12)}
-  .kpi .icon-bg{position:absolute;right:14px;bottom:10px;font-size:40px;opacity:.18}
-  .kpi .kpi-value{font-size:clamp(22px,8.5vw,38px);font-weight:800;line-height:1.05}
-  .kpi .kpi-label{margin-top:4px;font-size:clamp(11px,3.3vw,14px)}
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
+  .kpi{min-height:116px;border-radius:18px;color:#fff;position:relative;overflow:hidden;padding:18px 16px 14px;box-shadow:0 8px 24px rgba(0,0,0,.10);transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease}
+  .kpi:hover{transform:translateY(-3px);box-shadow:0 18px 32px rgba(0,0,0,.14)}
+  .kpi .icon-bg{position:absolute;right:12px;bottom:8px;font-size:48px;opacity:.13;pointer-events:none}
+  .kpi .kpi-value{font-size:clamp(26px,5vw,42px);font-weight:900;line-height:1;letter-spacing:-.5px}
+  .kpi .kpi-label{margin-top:6px;font-size:clamp(10px,2.4vw,13px);opacity:.9;font-weight:600;line-height:1.3}
+  .kpi .kpi-sub{font-size:10px;opacity:.72;margin-top:3px;font-weight:400}
   .kpi-blue{background:linear-gradient(135deg,#60a5fa,#2563eb)}
   .kpi-amber{background:linear-gradient(135deg,#f59e0b,#d97706)}
   .kpi-red{background:linear-gradient(135deg,#fb7185,#dc2626)}
   .kpi-green{background:linear-gradient(135deg,#34d399,#059669)}
-  @media(max-width:1199px){.kpi-grid{grid-template-columns:repeat(6,1fr)}.kpi{grid-column:span 3}}
-  @media(max-width:767px){.kpi-grid{grid-template-columns:repeat(1,1fr)}.kpi{grid-column:1/-1}}
+  .kpi-danger{background:linear-gradient(135deg,#f97316,#dc2626)}
+  .kpi-safe{background:linear-gradient(135deg,#34d399,#059669)}
+  @media(max-width:1199px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:380px){.kpi-grid{grid-template-columns:1fr}}
 
   /* ===== BOX & TABLE ===== */
   .box-modern{border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.05)}
@@ -591,6 +597,46 @@ if($qa){
 .toggle-sekretaris input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
 .toggle-sekretaris input:checked{background:#2563eb}
 .toggle-sekretaris input:checked::after{transform:translateX(16px)}
+
+/* ===== ZONE HEADERS (section dividers) ===== */
+.zone-header{display:flex;align-items:center;gap:10px;margin:22px 0 12px}
+.zone-header .zl{flex:1;height:1px;background:linear-gradient(90deg,var(--c-border),transparent)}
+.zone-header .zl-r{flex:1;height:1px;background:linear-gradient(270deg,var(--c-border),transparent)}
+.zone-header .zone-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted);white-space:nowrap;padding:0 6px;display:flex;align-items:center;gap:5px}
+
+/* ===== EW ALERT BANNER (hero) ===== */
+.ew-banner{
+  background:linear-gradient(90deg,#7c2d12 0%,#b91c1c 100%);
+  color:#fff;border-radius:10px;padding:10px 14px;
+  display:flex;align-items:center;gap:10px;margin-top:12px;
+  animation:ew-pulse 2.4s ease-in-out infinite;
+}
+@keyframes ew-pulse{0%,100%{box-shadow:0 0 0 0 rgba(185,28,28,.4)}50%{box-shadow:0 0 0 6px rgba(185,28,28,0)}}
+.ew-banner a{color:#fcd34d;font-weight:700;white-space:nowrap;margin-left:auto;text-decoration:none}
+.ew-banner a:hover{color:#fef9c3}
+
+/* ===== EW TABLE SEVERITY ===== */
+.ew-critical td{background:#fff5f5!important;border-left:3px solid #dc2626!important}
+.ew-critical td:first-child{font-weight:700}
+.ew-warn td{background:#fffbeb!important;border-left:3px solid #f59e0b!important}
+
+/* ===== BOX MODERN unified ===== */
+.box-modern{border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.055)!important;border:1px solid #f0f4f8!important}
+.box-modern>.box-header{background:#fff;border-bottom:1px solid #f0f4f8;padding:12px 16px}
+.box-modern>.box-header .box-title{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
+.box-modern.box-warning{border-top:none!important}
+.box-modern.box-danger{border-top:none!important}
+.box-modern.box-success{border-top:none!important}
+.box-modern.box-info{border-top:none!important}
+
+/* ===== EW PANEL HEADER variants ===== */
+.ew-header-danger{background:linear-gradient(90deg,#7c2d12,#b91c1c)!important;color:#fff!important;border-bottom:none!important}
+.ew-header-danger .box-title{color:#fff!important}
+.ew-header-safe{background:linear-gradient(90deg,#065f46,#059669)!important;color:#fff!important;border-bottom:none!important}
+.ew-header-safe .box-title{color:#fff!important}
+
+/* ===== QUICK ACTIONS polish ===== */
+.qa .ico{width:42px;height:42px;border-radius:12px;flex-shrink:0}
 </style>
 
 <div class="content-wrapper">
@@ -617,6 +663,13 @@ if($qa){
           <p id="welcome-sub" class="text-muted-600 welcome-sub" data-text="Pantau ringkasan, ranking, dan aktivitas terbaru dalam satu layar."></p>
         </div>
       </div>
+      <?php if ($EW_COUNT > 0): ?>
+      <div class="ew-banner" role="alert">
+        <i class="fa fa-exclamation-circle fa-lg"></i>
+        <span><strong><?php echo $EW_COUNT; ?> siswa</strong> mendekati ambang naik level peringatan — segera tinjau panel <em>Early Warning</em> di bawah.</span>
+        <a href="#zone-sp"><i class="fa fa-arrow-down"></i> Lihat</a>
+      </div>
+      <?php endif; ?>
     </div>
 
     <!-- FILTER BAR -->
@@ -672,46 +725,50 @@ if($qa){
 
     <!-- KPI -->
     <div class="kpi-grid">
-      <div class="kpi kpi-green">
+      <div class="kpi kpi-blue">
         <div class="kpi-value" data-count="<?php echo $SISWA; ?>">0</div>
-        <div class="kpi-label">Siswa</div>
+        <div class="kpi-label">Total Siswa</div>
+        <div class="kpi-sub"><?php echo $KELAS; ?> kelas aktif</div>
         <i class="fa fa-graduation-cap icon-bg"></i>
       </div>
       <div class="kpi kpi-amber">
         <div class="kpi-value" data-count="<?php echo $ADMIN; ?>">0</div>
-        <div class="kpi-label">PTK (Pendidik & Tenaga Kependidikan)</div>
-        <i class="fa fa-user-shield icon-bg"></i>
-      </div>
-      <div class="kpi kpi-blue">
-        <div class="kpi-value" data-count="<?php echo $ROMBEL; ?>">0</div>
-        <div class="kpi-label">Jurusan/Tingkat</div>
-        <i class="fa fa-layer-group icon-bg"></i>
-      </div>
-      <div class="kpi kpi-blue">
-        <div class="kpi-value" data-count="<?php echo $KELAS; ?>">0</div>
-        <div class="kpi-label">Kelas (<?php echo htmlspecialchars($ta_row['ta_nama'] ?? ''); ?>)</div>
-        <i class="fa fa-school icon-bg"></i>
-      </div>
-      <div class="kpi kpi-red">
-        <div class="kpi-value" data-count="<?php echo $JPel; ?>">0</div>
-        <div class="kpi-label">Jenis Pelanggaran</div>
-        <i class="fa fa-list-ul icon-bg"></i>
-      </div>
-      <div class="kpi kpi-green">
-        <div class="kpi-value" data-count="<?php echo $JPres; ?>">0</div>
-        <div class="kpi-label">Jenis Prestasi</div>
-        <i class="fa fa-star icon-bg"></i>
+        <div class="kpi-label">PTK</div>
+        <div class="kpi-sub"><?php echo $ROMBEL; ?> jurusan/tingkat</div>
+        <i class="fa fa-chalkboard-teacher icon-bg"></i>
       </div>
       <div class="kpi kpi-red">
         <div class="kpi-value" data-count="<?php echo $TPel; ?>">0</div>
-        <div class="kpi-label">Transaksi Pelanggaran (TA)</div>
-        <i class="fa fa-exclamation-triangle icon-bg"></i>
+        <div class="kpi-label">Transaksi Pelanggaran</div>
+        <div class="kpi-sub">TA: <?php echo htmlspecialchars($ta_row['ta_nama'] ?? '-'); ?></div>
+        <i class="fa fa-gavel icon-bg"></i>
       </div>
       <div class="kpi kpi-green">
         <div class="kpi-value" data-count="<?php echo $TPres; ?>">0</div>
-        <div class="kpi-label">Transaksi Prestasi (TA)</div>
-        <i class="fa fa-check-circle icon-bg"></i>
+        <div class="kpi-label">Transaksi Prestasi</div>
+        <div class="kpi-sub">TA: <?php echo htmlspecialchars($ta_row['ta_nama'] ?? '-'); ?></div>
+        <i class="fa fa-trophy icon-bg"></i>
       </div>
+      <?php $kpi5Class = ($SP_AKTIF > 0 || $EW_COUNT > 0) ? 'kpi-danger' : 'kpi-safe'; ?>
+      <div class="kpi <?php echo $kpi5Class; ?>">
+        <div class="kpi-value" data-count="<?php echo $SP_AKTIF; ?>">0</div>
+        <div class="kpi-label">Siswa Aktif SP</div>
+        <div class="kpi-sub">
+          <?php if ($EW_COUNT > 0): ?>
+            <i class="fa fa-exclamation-triangle"></i> <?php echo $EW_COUNT; ?> mendekati ambang
+          <?php else: ?>
+            Semua dalam batas aman
+          <?php endif; ?>
+        </div>
+        <i class="fa fa-exclamation-circle icon-bg"></i>
+      </div>
+    </div>
+
+    <!-- ZONA: PEMANTAUAN AKTIF -->
+    <div id="zone-sp" class="zone-header">
+      <div class="zl"></div>
+      <span class="zone-label"><i class="fa fa-shield"></i> Pemantauan Aktif</span>
+      <div class="zl-r"></div>
     </div>
 
     <!-- SP DISTRIBUTION + EARLY WARNING -->
@@ -743,12 +800,14 @@ if($qa){
       </div>
 
       <div class="col-lg-7">
-        <div class="box box-modern box-warning">
-          <div class="box-header">
+        <div class="box box-modern">
+          <div class="box-header <?php echo $EW_COUNT > 0 ? 'ew-header-danger' : 'ew-header-safe'; ?>">
             <h3 class="box-title">
-              <i class="fa fa-exclamation-triangle" style="color:#d97706"></i>
+              <i class="fa fa-<?php echo $EW_COUNT > 0 ? 'exclamation-triangle' : 'check-circle'; ?>"></i>
               Early Warning &mdash; Mendekati Ambang SP
-              <small class="text-muted-600" style="font-weight:400;margin-left:4px">(dalam jarak &le;5 poin dari naik level)</small>
+              <?php if ($EW_COUNT > 0): ?>
+                <span style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:900"><?php echo $EW_COUNT; ?> siswa</span>
+              <?php endif; ?>
             </h3>
           </div>
           <div class="box-body" style="padding:8px 12px">
@@ -774,8 +833,9 @@ if($qa){
                   <?php
                     $ewBadge = ['SP1'=>'badge-soft-amber','SP2'=>'badge-soft-red','SP3'=>'badge-soft-red','SP4'=>'badge-soft-red'];
                     foreach ($earlyWarning as $ew):
+                      $ewRow = $ew['jarak'] <= 2 ? 'ew-critical' : 'ew-warn';
                   ?>
-                    <tr>
+                    <tr class="<?php echo $ewRow; ?>">
                       <td><?php echo htmlspecialchars($ew['siswa_nama']); ?></td>
                       <td><?php echo htmlspecialchars($ew['siswa_nis']); ?></td>
                       <td style="text-align:center"><span class="badge-soft badge-soft-red"><?php echo $ew['saldo']; ?></span></td>
@@ -795,6 +855,13 @@ if($qa){
       </div>
     </div>
 
+    <!-- ZONA: ANALITIK -->
+    <div class="zone-header">
+      <div class="zl"></div>
+      <span class="zone-label"><i class="fa fa-chart-area"></i> Analitik &amp; Tren</span>
+      <div class="zl-r"></div>
+    </div>
+
     <!-- GRAFIK -->
     <div class="box box-modern">
       <div class="box-header">
@@ -812,8 +879,15 @@ if($qa){
       </div>
     </div>
 
+    <!-- ZONA: RIWAYAT & AKTIVITAS -->
+    <div class="zone-header">
+      <div class="zl"></div>
+      <span class="zone-label"><i class="fa fa-history"></i> Riwayat &amp; Aktivitas</span>
+      <div class="zl-r"></div>
+    </div>
+
     <!-- AKTIVITAS TERBARU -->
-    <div class="box box-info box-aktivitas-bulan" style="border-radius:12px;">
+    <div class="box box-modern box-aktivitas-bulan" style="border-radius:12px;">
       <div class="box-header with-border">
         <h3 class="box-title">
           Aktivitas Penerima Poin Terbaru
@@ -881,9 +955,11 @@ if($qa){
     <!-- TOP LISTS -->
     <div class="row">
       <section class="col-lg-6">
-        <div class="box box-modern box-danger">
-          <div class="box-header">
-            <h3 class="ribbon-title"><span class="badge-soft badge-soft-red"><i class="fa fa-fire"></i> 5 Besar Pelanggaran Terbanyak (TA)</span></h3>
+        <div class="box box-modern">
+          <div class="box-header" style="border-left:4px solid #dc2626">
+            <h3 class="box-title"><i class="fa fa-fire" style="color:#dc2626"></i> 5 Besar Pelanggaran Terbanyak
+              <small class="text-muted-600" style="font-weight:400;margin-left:4px">(TA terpilih)</small>
+            </h3>
           </div>
           <div class="box-body">
             <div class="table-responsive">
@@ -921,9 +997,11 @@ if($qa){
       </section>
 
       <section class="col-lg-6">
-        <div class="box box-modern box-success">
-          <div class="box-header">
-            <h3 class="ribbon-title"><span class="badge-soft badge-soft-green"><i class="fa fa-star"></i> 5 Besar Skor Tertinggi (TA)</span></h3>
+        <div class="box box-modern">
+          <div class="box-header" style="border-left:4px solid #059669">
+            <h3 class="box-title"><i class="fa fa-star" style="color:#059669"></i> 5 Besar Skor Tertinggi
+              <small class="text-muted-600" style="font-weight:400;margin-left:4px">(TA terpilih)</small>
+            </h3>
           </div>
           <div class="box-body">
             <div class="table-responsive">
@@ -961,9 +1039,9 @@ if($qa){
     <!-- LOG AKTIVITAS -->
     <div class="row">
       <div class="col-lg-12">
-        <div class="box box-modern box-info">
-          <div class="box-header">
-            <h3 class="box-title"><i class="fa fa-history"></i> Log Aktivitas Pengguna (Terbaru)</h3>
+        <div class="box box-modern">
+          <div class="box-header" style="border-left:4px solid #2563eb">
+            <h3 class="box-title"><i class="fa fa-history" style="color:#2563eb"></i> Log Aktivitas Pengguna (Terbaru)</h3>
           </div>
           <div class="box-body">
             <div class="table-responsive">
@@ -997,9 +1075,9 @@ if($qa){
     <!-- STATUS ONLINE -->
     <div class="row">
       <div class="col-lg-12">
-        <div class="box box-modern box-warning">
-          <div class="box-header">
-            <h3 class="box-title"><i class="fa fa-wifi"></i> Login Terakhir & Status Online</h3>
+        <div class="box box-modern">
+          <div class="box-header" style="border-left:4px solid #0ea5e9">
+            <h3 class="box-title"><i class="fa fa-wifi" style="color:#0ea5e9"></i> Login Terakhir &amp; Status Online</h3>
           </div>
           <div class="status-summary" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 12px;">
   <span id="sumAdmin" class="badge-soft badge-soft-blue">PTK &amp; Admin: 0/0 Online</span>
@@ -1185,27 +1263,60 @@ if($qa){
     var yMax    = Math.max(5, maxVal + Math.ceil(maxVal * 0.15) + 1);
 
     Highcharts.chart('trendHC', {
-      chart: { type: 'spline', zoomType: 'x', animation: { duration: 800 } },
-      title: { text: 'Tren Bulanan Pelanggaran & Prestasi' },
-      subtitle: { text: 'TA: <?php echo htmlspecialchars($ta_row['ta_nama'] ?? ''); ?>' },
-      xAxis: { categories: labels, title: { text: 'Bulan (Tahun Ajaran)' }, tickLength: 0, gridLineWidth: 1, gridLineColor: 'rgba(15,23,42,0.06)' },
-      yAxis: { title: { text: 'Jumlah Transaksi' }, allowDecimals: false, tickInterval: step, max: yMax, gridLineColor: 'rgba(15,23,42,0.08)' },
-      legend: { layout: 'horizontal', align: 'center', verticalAlign: 'top' },
-      tooltip: { shared: true, useHTML: true, headerFormat: '<b>{point.key}</b><br/>', pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>' },
+      chart: {
+        type: 'areaspline', zoomType: 'x', animation: { duration: 900 },
+        backgroundColor: '#fafbff',
+        style: { fontFamily: 'inherit' },
+        spacing: [20, 20, 10, 10]
+      },
+      title:    { text: null },
+      subtitle: { text: null },
+      xAxis: {
+        categories: labels,
+        tickLength: 0,
+        gridLineWidth: 1,
+        gridLineColor: 'rgba(15,23,42,0.05)',
+        lineColor: '#e5e7eb',
+        labels: { style: { color: '#64748b', fontSize: '12px' } }
+      },
+      yAxis: {
+        title: { text: 'Transaksi', style: { color: '#94a3b8', fontSize: '11px' } },
+        allowDecimals: false, tickInterval: step, max: yMax,
+        gridLineColor: 'rgba(15,23,42,0.07)',
+        labels: { style: { color: '#64748b', fontSize: '11px' } }
+      },
+      legend: {
+        layout: 'horizontal', align: 'right', verticalAlign: 'top',
+        itemStyle: { fontWeight: '700', fontSize: '12px', color: '#374151' },
+        symbolRadius: 4
+      },
+      tooltip: {
+        shared: true, useHTML: true,
+        backgroundColor: '#fff',
+        borderColor: '#e5e7eb', borderRadius: 10,
+        shadow: { color: 'rgba(0,0,0,.08)', offsetX: 0, offsetY: 4, opacity: 1, width: 16 },
+        headerFormat: '<div style="font-weight:800;margin-bottom:4px;color:#111">{point.key}</div>',
+        pointFormat: '<div style="display:flex;align-items:center;gap:6px;margin:2px 0"><span style="width:10px;height:10px;border-radius:50%;background:{series.color};display:inline-block"></span><span style="color:#374151">{series.name}</span><strong style="margin-left:auto">{point.y}</strong></div>'
+      },
       plotOptions: {
-        series: {
+        areaspline: {
           lineWidth: 2.5,
-          marker: { enabled: true, radius: 3 },
-          dataLabels: { enabled: true, style: { fontWeight: '700', textOutline: 'none' }, formatter: function(){ return (this.y > 0) ? this.y : ''; } },
-          states: { hover: { lineWidthPlus: 0 } }
+          marker: { enabled: true, radius: 4, lineWidth: 2, lineColor: '#fff' },
+          dataLabels: {
+            enabled: true,
+            style: { fontWeight: '700', textOutline: 'none', fontSize: '11px' },
+            formatter: function(){ return (this.y > 0) ? this.y : ''; }
+          },
+          states: { hover: { lineWidthPlus: 0 } },
+          fillOpacity: 0.12
         }
       },
       colors: ['#dc2626', '#059669'],
       series: [
-        { name: 'Pelanggaran', data: pelData },
-        { name: 'Prestasi',    data: presData }
+        { name: 'Pelanggaran', data: pelData,  fillColor: { linearGradient: {x1:0,y1:0,x2:0,y2:1}, stops: [[0,'rgba(220,38,38,.18)'],[1,'rgba(220,38,38,0)']] } },
+        { name: 'Prestasi',    data: presData, fillColor: { linearGradient: {x1:0,y1:0,x2:0,y2:1}, stops: [[0,'rgba(5,150,105,.18)'],[1,'rgba(5,150,105,0)']] } }
       ],
-      exporting: { enabled: true },
+      exporting: { enabled: false },
       credits:   { enabled: false },
       accessibility: { enabled: true, description: 'Garis merah menunjukkan jumlah pelanggaran per bulan, hijau untuk prestasi.' }
     });
@@ -1225,15 +1336,48 @@ if($qa){
     ]); ?>;
     var hasData = spData.some(function(d){ return d.y > 0; });
     if (!hasData || !document.getElementById('spDonut')) return;
-    Highcharts.chart('spDonut', {
-      chart:   { type:'pie', animation:{ duration:700 }, margin:[4,0,4,0], spacing:[0,0,0,0] },
-      title:   { text:null },
-      tooltip: { pointFormat:'<b>{point.name}</b>: {point.y} siswa ({point.percentage:.1f}%)' },
+
+    var totalSiswa = spData.reduce(function(s,d){ return s+d.y; }, 0);
+    var amanCount  = <?php echo (int)$spDist['aman']; ?>;
+    var amanPct    = totalSiswa > 0 ? Math.round(amanCount / totalSiswa * 100) : 0;
+
+    var spChart = Highcharts.chart('spDonut', {
+      chart: {
+        type:'pie', animation:{ duration:700 },
+        margin:[8,0,8,0], spacing:[0,0,0,0],
+        backgroundColor:'transparent',
+        style: { fontFamily:'inherit' },
+        events: {
+          render: function(){
+            var c = this, cx = c.plotLeft + c.plotWidth/2, cy = c.plotTop + c.plotHeight/2;
+            if (!c._cl) {
+              c._cl = c.renderer.label(
+                '<span style="font-size:26px;font-weight:900;color:#111827;line-height:1">'+ amanPct +'%</span><br>'+
+                '<span style="font-size:11px;color:#6b7280;font-weight:600">Aman</span>',
+                0, 0, null, null, null, true
+              ).attr({ zIndex: 5 }).add();
+            }
+            var bb = c._cl.getBBox();
+            c._cl.attr({ x: cx - bb.width/2, y: cy - bb.height/2 });
+          }
+        }
+      },
+      title: { text:null },
+      tooltip: {
+        useHTML:true, borderRadius:10, borderColor:'#e5e7eb',
+        pointFormat:'<span style="color:{point.color}">●</span> <b>{point.name}</b>: {point.y} siswa ({point.percentage:.1f}%)'
+      },
       plotOptions: {
         pie:{
-          innerSize:'52%', startAngle:-90,
-          dataLabels:{ enabled:true, format:'<b>{point.name}</b>: {point.y}', style:{ fontWeight:'700', textOutline:'none', fontSize:'11px' } },
-          showInLegend:false
+          innerSize:'55%', startAngle:-90,
+          dataLabels:{
+            enabled:true, distance:10,
+            format:'<b style="color:{point.color}">{point.name}</b>: {point.y}',
+            style:{ fontWeight:'700', textOutline:'none', fontSize:'11px', color:'#374151' }
+          },
+          showInLegend:false,
+          borderWidth: 2,
+          borderColor: '#fff'
         }
       },
       series:[{ name:'Siswa', colorByPoint:true, data:spData }],
