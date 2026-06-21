@@ -252,6 +252,10 @@ include 'header.php';
       <span>Kalender Akademik</span>
       <span class="title-badge"><i class="fa fa-sliders"></i> / Kelola Libur &amp; Kegiatan</span>
     </h1>
+    <ol class="breadcrumb">
+      <li><a href="#"><i class="fa fa-home"></i> Home</a></li>
+      <li class="active">Kalender Akademik</li>
+    </ol>
 
     <?php if($msg): ?>
       <div class="alert alert-info" style="margin-top:8px;"><?= $msg ?></div>
@@ -461,49 +465,50 @@ include 'header.php';
 </div>
 
 <script>
-// Toggle checkbox semua
+// Toggle checkbox semua (onclick handler — harus tersedia sebelum DOM dirender)
 function toggleAll(cb){
   document.querySelectorAll('input[name="ids[]"]').forEach(x=>x.checked=cb.checked);
 }
-// Preset range n hari
+// Preset range n hari (onclick handler)
 function presetRange(n){
-  const s = document.querySelector('input[name="tgl1"]').value;
+  var s = document.querySelector('input[name="tgl1"]').value;
   if(!s){ alert('Isi Tgl Mulai dulu.'); return; }
-  const d = new Date(s);
+  var d = new Date(s);
   d.setDate(d.getDate() + (n-1));
-  const yyyy=d.getFullYear(), mm=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
-  document.querySelector('input[name="tgl2"]').value = `${yyyy}-${mm}-${dd}`;
+  var yyyy=d.getFullYear(), mm=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
+  document.querySelector('input[name="tgl2"]').value = yyyy+'-'+mm+'-'+dd;
 }
+</script>
 
-// ====== DataTables untuk Daftar Libur/Kegiatan (pagination default 10) ======
+<?php include 'footer.php'; ?>
+
+<script>
+// DataTables untuk Daftar Libur/Kegiatan — init setelah footer.php (DT 1.13.4)
 $(function(){
   if ($.fn.dataTable && $.fn.dataTable.ext) { $.fn.dataTable.ext.errMode = 'console'; }
   var $tbl = $('#table-libur');
-
   if ($.fn.DataTable && $.fn.DataTable.isDataTable($tbl)) {
     try { $tbl.DataTable().destroy(); } catch(e){}
     $tbl.find('thead th').removeClass('sorting sorting_asc sorting_desc sorting_disabled');
   }
-
   if ($.fn.DataTable) {
     $tbl.DataTable({
       destroy: true,
       autoWidth: false,
       pageLength: 10,
-      lengthMenu: [[10,25,50,-1],[10,25,50,"Semua"]],
+      lengthMenu: [[10,25,50,-1],[10,25,50,'Semua']],
       order: [[1,'asc'],[2,'asc']], // Tanggal, lalu Tipe
       columnDefs: [{ targets:[0], orderable:false }],
       language: {
-        search: "Cari:",
-        lengthMenu: "Tampil _MENU_ data",
-        info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
-        infoEmpty: "Tidak ada data",
-        zeroRecords: "Tidak ditemukan data yang cocok",
-        infoFiltered: "(difilter dari total _MAX_ data)",
-        paginate: { first:"Pertama", last:"Terakhir", next:"Berikutnya", previous:"Sebelumnya" }
+        search: 'Cari:',
+        lengthMenu: 'Tampil _MENU_ data',
+        info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+        infoEmpty: 'Tidak ada data',
+        zeroRecords: 'Tidak ditemukan data yang cocok',
+        infoFiltered: '(difilter dari total _MAX_ data)',
+        paginate: { first:'Pertama', last:'Terakhir', next:'Berikutnya', previous:'Sebelumnya' }
       }
     });
   }
 });
 </script>
-<?php include 'footer.php'; ?>
