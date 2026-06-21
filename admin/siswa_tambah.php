@@ -96,6 +96,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
           <div class="box-body">
             <form action="siswa_act.php" method="post" enctype="multipart/form-data" id="form-tambah" novalidate>
+              <?php echo epoin_csrf_field(); ?>
 
               <!-- NAMA -->
               <div class="form-group">

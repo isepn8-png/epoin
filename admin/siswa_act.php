@@ -1,5 +1,11 @@
 <?php
 // admin/siswa_act.php
+session_start();
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_guard(true);
+if (!epoin_csrf_validate()) {
+    epoin_csrf_fail_redirect('siswa_tambah.php');
+}
 include '../koneksi.php';
 
 // Ambil data
