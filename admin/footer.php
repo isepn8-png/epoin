@@ -563,6 +563,37 @@
 <?php unset($_SESSION['flash_err']); endif; ?>
 </script>
 
+<script>
+/* ===== EPOIN: SweetAlert2 konfirmasi hapus (POST+CSRF) ===== */
+(function(){
+  function attachDelConfirm(){
+    document.querySelectorAll('.btn-del-confirm').forEach(function(btn){
+      if (btn.dataset.epsInit) return;
+      btn.dataset.epsInit = '1';
+      btn.addEventListener('click', function(){
+        var form = this.closest('form.eps-del-form');
+        if (!form) return;
+        var nama = this.dataset.nama || '';
+        var msg  = nama ? 'Data <b>' + nama + '</b> akan dihapus permanen.' : 'Data akan dihapus permanen.';
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: 'Konfirmasi Hapus',
+            html: msg + '<br><small style="color:#6b7280">Tindakan ini tidak dapat dibatalkan.</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa fa-trash"></i> Ya, Hapus',
+            cancelButtonText: 'Batal',
+            customClass: { popup: 'swal2-brand' }
+          }).then(function(r){ if (r.isConfirmed) form.submit(); });
+        } else {
+          if (confirm('Hapus ' + (nama || 'data') + '? Tindakan ini tidak dapat dibatalkan.')) form.submit();
+        }
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', attachDelConfirm);
+})();
+</script>
 
 </body>
 </html>

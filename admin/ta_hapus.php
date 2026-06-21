@@ -1,22 +1,41 @@
-<?php 
+<?php
+require_once __DIR__ . '/../includes/epoin_security.php';
 include '../koneksi.php';
-$id = $_GET['id'];
-
-mysqli_query($koneksi, "delete from ta where ta_id='$id'");
-
-$x = mysqli_query($koneksi, "select * from kelas where kelas_ta='$id'");
-while($xx = mysqli_fetch_array($x)){
-
-	$id_kelas = $xx['siswa_id'];
-
-	mysqli_query($koneksi, "delete from kelas where kelas_ta='$id_kelas'");
-	mysqli_query($koneksi, "delete from input_prestasi where kelas='$id_kelas'");
-	mysqli_query($koneksi, "delete from input_pelanggaran where kelas='$id_kelas'");
-	mysqli_query($koneksi, "delete from kelas_siswa where ks_kelas='$id_kelas'");
-
+epoin_staff_guard(true);
+epoin_require_post();
+if (!epoin_csrf_validate()) {
+    epoin_csrf_fail_redirect('ta.php');
 }
 
+$id = (int) ($_POST['id'] ?? 0);
+if ($id <= 0) {
+    header('Location: ta.php');
+    exit;
+}
 
+// Hapus kelas terkait TA ini (cascading)
+$stmt = mysqli_prepare($koneksi, 'SELECT kelas_id FROM kelas WHERE kelas_ta = ?');
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, 'i', $id);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    while ($row = mysqli_fetch_assoc($res)) {
+        $kid = (int) $row['kelas_id'];
+        foreach ([
+            'DELETE FROM input_prestasi WHERE kelas = ?',
+            'DELETE FROM input_pelanggaran WHERE kelas = ?',
+            'DELETE FROM kelas_siswa WHERE ks_kelas = ?',
+            'DELETE FROM kelas WHERE kelas_id = ?',
+        ] as $sql) {
+            $d = mysqli_prepare($koneksi, $sql);
+            if ($d) { mysqli_stmt_bind_param($d, 'i', $kid); mysqli_stmt_execute($d); mysqli_stmt_close($d); }
+        }
+    }
+    mysqli_stmt_close($stmt);
+}
 
+// Hapus TA
+$d = mysqli_prepare($koneksi, 'DELETE FROM ta WHERE ta_id = ?');
+if ($d) { mysqli_stmt_bind_param($d, 'i', $id); mysqli_stmt_execute($d); mysqli_stmt_close($d); }
 
-header("location:ta.php");
+header('Location: ta.php');

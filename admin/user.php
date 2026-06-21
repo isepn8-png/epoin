@@ -59,7 +59,15 @@
                       <td>                        
                         <a class="btn btn-warning btn-sm" href="user_edit.php?id=<?php echo $d['user_id'] ?>"><i class="fa fa-cog"></i></a>
                         <?php if($d['user_id'] != 1){ ?>
-                          <a onclick="return confirm('Data yang terhubung akan ikut dihapus')" class="btn btn-danger btn-sm" href="user_hapus.php?id=<?php echo $d['user_id'] ?>"><i class="fa fa-trash"></i></a>
+                          <form class="eps-del-form" action="user_hapus.php" method="post" style="display:inline">
+                            <?= epoin_csrf_field() ?>
+                            <input type="hidden" name="id" value="<?php echo (int)$d['user_id']; ?>">
+                            <button type="button" class="btn btn-danger btn-sm btn-del-confirm"
+                                    data-nama="<?php echo epoin_h($d['user_nama'] ?? ''); ?>"
+                                    title="Hapus pengguna">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </form>
                         <?php } ?>
                       </td>
                     </tr>
