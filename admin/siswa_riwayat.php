@@ -103,6 +103,14 @@ if ($negSaldo > 0){
     }
   }
 }
+$levelActive = 0;
+if ($negSaldo >= 1   && $negSaldo <= 20)  $levelActive = 1;
+elseif ($negSaldo <= 40) $levelActive = 2;
+elseif ($negSaldo <= 60) $levelActive = 3;
+elseif ($negSaldo <= 80) $levelActive = 4;
+elseif ($negSaldo <= 99) $levelActive = 5;
+elseif ($negSaldo >= 100) $levelActive = 6;
+$jenjang_nama_siswa = $k['siswa_nama'] ?? '';
 
 // ===== Pesan WA Orang Tua =====
 $hpOrtu = trim($k['hp_ortu'] ?? '');
@@ -550,6 +558,11 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
                           Cetak ulang tetap tersedia bila sudah pernah terbit.)
                         </small>
                       </div>
+                      <div style="margin-top:10px;">
+                        <button id="btnJenjang" type="button" class="btn btn-info btn-sm">
+                          <i class="fa fa-sitemap"></i> Lihat Jenjang Pembinaan
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -728,6 +741,8 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
 </div>
 
 <?php include 'footer.php'; ?>
+
+<?php include '../includes/jenjang_pembinaan_modal.php'; ?>
 
 <!-- ===== MODAL: Tambah Nomor WA Orang Tua ===== -->
 <?php if(!$hpOrtu): ?>
