@@ -21,10 +21,6 @@ if ($result) {
 $total = count($rows);
 ?>
 
-<!-- DataTables (tanpa Buttons) -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap.min.css">
-
 <style>
   /* =========================
      THEME: Soft Blue Dashboard
@@ -433,43 +429,29 @@ $total = count($rows);
 
 </div>
 
-<!-- JS DataTables (tanpa Buttons) -->
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<?php include 'footer.php'; ?>
 
 <script>
-(function() {
-  // Inisialisasi DataTable (tanpa tombol export)
+/* DataTable jurusan — init setelah footer.php agar pakai DT 1.13.4 yang sudah dimuat */
+$(function() {
   var dt = $('#table-tingkat').DataTable({
-    responsive: true,
     order: [[1, 'asc']],
     pageLength: 10,
-    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]],
+    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Semua']],
     dom: "<'row'<'col-sm-6'l><'col-sm-6'f>>" + "rt" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
     language: {
-      search: "Cari:",
-      lengthMenu: "Tampil _MENU_ data",
-      zeroRecords: "Tidak ada data",
-      info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
-      infoEmpty: "Tidak ada data",
-      infoFiltered: "(difilter dari total _MAX_ data)",
-      paginate: { previous: "Sebelumnya", next: "Berikutnya" }
+      search: 'Cari:',
+      lengthMenu: 'Tampil _MENU_ data',
+      zeroRecords: 'Tidak ada data',
+      info: 'Menampilkan _START_ - _END_ dari _TOTAL_ data',
+      infoEmpty: 'Tidak ada data',
+      infoFiltered: '(difilter dari total _MAX_ data)',
+      paginate: { previous: 'Sebelumnya', next: 'Berikutnya' }
     }
   });
 
-  // Tooltip untuk tombol aksi
   $('[data-toggle="tooltip"]').tooltip();
 
-  // Konfirmasi hapus
-  $(document).on('click', '.btn-hapus', function(e) {
-    var nama = $(this).data('nama') || 'data ini';
-    if (!confirm('Anda yakin ingin menghapus "' + nama + '"?\nData terkait mungkin ikut terhapus.')) {
-      e.preventDefault();
-    }
-  });
-
-  // Validasi ringan sisi klien
   $('#form-tambah-jurusan').on('submit', function(e) {
     var v = ($('#jurusan_nama').val() || '').trim();
     if (v.length < 2) {
@@ -478,7 +460,5 @@ $total = count($rows);
       $('#jurusan_nama').focus();
     }
   });
-})();
+});
 </script>
-
-<?php include 'footer.php'; ?>

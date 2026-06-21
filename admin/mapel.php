@@ -280,7 +280,7 @@ if($_qCount && ($__r = mysqli_fetch_assoc($_qCount))){ $total_mapel = (int)$__r[
                         <div class="btn-combo" role="group" aria-label="Opsi">
                           <button
                             type="button"
-                            class="btn btn-edit btn-sm btn-icon btn-edit"
+                            class="btn btn-edit btn-sm"
                             data-toggle="tooltip" title="Edit mapel"
                             data-id="<?php echo (int)$r['mapel_id']; ?>"
                             data-kode="<?php echo htmlspecialchars($r['mapel_kode']); ?>"
