@@ -22,6 +22,7 @@ $status   = strtolower(trim($_POST['status'] ?? 'aktif'));
 $pwdRaw   = trim($_POST['password'] ?? ''); // kosong = tidak ganti
 $hpOrtu   = preg_replace('/\D+/', '', trim($_POST['hp_ortu'] ?? ''));
 if (strlen($hpOrtu) > 20) $hpOrtu = substr($hpOrtu, 0, 20);
+if ($hpOrtu !== '' && strlen($hpOrtu) < 10) { $hpOrtu = ''; }
 
 // Normalisasi & validasi ringan server-side
 $allowedStatus = ['aktif','tamat','pindah','dikeluarkan'];
@@ -78,11 +79,6 @@ if (isset($_FILES['foto']) && is_uploaded_file($_FILES['foto']['tmp_name'])) {
     }
   }
 }
-
-if (move_uploaded_file($_FILES['file']['tmp_name'], $abs_path)) {
-  usage_log_file_uploaded($koneksi, $SEKOLAH_ID, $abs_path, 'upload dokumen');
-}
-
 
 // ---- Build UPDATE dinamis (prepared statement) ----
 $hpOrtuVal = $hpOrtu !== '' ? $hpOrtu : null;
