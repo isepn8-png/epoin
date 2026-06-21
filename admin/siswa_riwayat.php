@@ -358,8 +358,9 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
       </small>
     </h1>
     <ol class="breadcrumb">
-      <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
-      <li class="active">Dashboard</li>
+      <li><a href="index.php"><i class="fa fa-dashboard"></i> Home</a></li>
+      <li><a href="siswa.php">Siswa</a></li>
+      <li class="active">Profil Disiplin</li>
     </ol>
   </section>
 
@@ -467,7 +468,7 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
                 $riskPercent = max(0, min(100, -$saldo)); // hanya saldo negatif
                 $stageColor  = $currentStage['color'] ?? '#10b981';
               ?>
-              <div class="row" style="margin-top:14px%;">
+              <div class="row" style="margin-top:14px;">
                 <div class="col-lg-12">
                   <div class="viol-wrap">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
