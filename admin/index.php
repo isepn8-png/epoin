@@ -249,6 +249,14 @@ usort($earlyWarning, function($a,$b){ return $a['jarak'] - $b['jarak']; });
 $EW_COUNT = count($earlyWarning);
 $SP_AKTIF = $spDist['sp1'] + $spDist['sp2'] + $spDist['sp3'] + $spDist['sp4'];
 
+/* ======== SP TERBIT dari sp_log — scope: tahun pertama TA aktif ======== */
+$spTerbit = ['sp1'=>0,'sp2'=>0,'sp3'=>0,'sp4'=>0];
+$ta_year = ($ta_aktif && !empty($ta_aktif['ta_nama'])) ? (int)substr(trim($ta_aktif['ta_nama']),0,4) : (int)date('Y');
+if($ta_year < 2000) $ta_year = (int)date('Y');
+$qSPT = db_query($koneksi,"SELECT sp_level, COUNT(DISTINCT siswa_id) AS c FROM sp_log WHERE YEAR(tanggal)=$ta_year GROUP BY sp_level");
+if($qSPT){ while($r=mysqli_fetch_assoc($qSPT)){ $key=strtolower($r['sp_level']); if(array_key_exists($key,$spTerbit)) $spTerbit[$key]=(int)$r['c']; } mysqli_free_result($qSPT); }
+$SP_TOTAL_TERBIT = array_sum($spTerbit);
+
 /* ======== AKTIVITAS PENERIMA POIN TERBARU (SEMUA WAKTU) ======== */
 $sqlAktAll = "
   (SELECT 'Prestasi' AS tipe, ip.waktu AS tgl, s.siswa_nama AS siswa, pr.prestasi_nama AS nama, pr.prestasi_point AS poin
@@ -399,7 +407,12 @@ if($qa){
   .kpi-green{background:linear-gradient(135deg,#34d399,#059669)}
   .kpi-danger{background:linear-gradient(135deg,#f97316,#dc2626)}
   .kpi-safe{background:linear-gradient(135deg,#34d399,#059669)}
-  @media(max-width:1199px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+  .kpi-orange{background:linear-gradient(135deg,#fb923c,#f97316)}
+  .kpi-maroon{background:linear-gradient(135deg,#ef4444,#7f1d1d)}
+  .kpi-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+  @media(max-width:1199px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.kpi-grid-3{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.kpi-grid-3{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:380px){.kpi-grid{grid-template-columns:1fr}.kpi-grid-3{grid-template-columns:1fr}}
   @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:380px){.kpi-grid{grid-template-columns:1fr}}
 
@@ -794,6 +807,52 @@ if($qa){
           <?php endif; ?>
         </div>
         <i class="fa fa-exclamation-circle icon-bg"></i>
+      </div>
+    </div>
+
+    <!-- REKAPITULASI SP TERBIT -->
+    <div class="zone-header" style="margin-top:6px">
+      <div class="zl"></div>
+      <span class="zone-label"><i class="fa fa-envelope-o"></i> Rekapitulasi Surat Peringatan Terbit <?php echo $ta_year; ?></span>
+      <div class="zl-r"></div>
+    </div>
+    <div class="kpi-grid-3">
+      <div class="kpi kpi-amber">
+        <div class="kpi-value" data-count="<?php echo $spTerbit['sp1']; ?>">0</div>
+        <div class="kpi-label">SP1 Terbit</div>
+        <div class="kpi-sub">Teguran &amp; Pembinaan Umum</div>
+        <i class="fa fa-file-text icon-bg"></i>
+      </div>
+      <div class="kpi kpi-orange">
+        <div class="kpi-value" data-count="<?php echo $spTerbit['sp2']; ?>">0</div>
+        <div class="kpi-label">SP2 Terbit</div>
+        <div class="kpi-sub">Panggilan Orang Tua</div>
+        <i class="fa fa-file-text-o icon-bg"></i>
+      </div>
+      <div class="kpi kpi-red">
+        <div class="kpi-value" data-count="<?php echo $spTerbit['sp3']; ?>">0</div>
+        <div class="kpi-label">SP3 Terbit</div>
+        <div class="kpi-sub">Pembinaan Khusus</div>
+        <i class="fa fa-file-text-o icon-bg"></i>
+      </div>
+      <div class="kpi kpi-maroon">
+        <div class="kpi-value" data-count="<?php echo $spTerbit['sp4']; ?>">0</div>
+        <div class="kpi-label">SP4 Terbit</div>
+        <div class="kpi-sub">Konferensi Kasus</div>
+        <i class="fa fa-exclamation-triangle icon-bg"></i>
+      </div>
+      <div class="kpi kpi-blue">
+        <div class="kpi-value" data-count="<?php echo $SP_TOTAL_TERBIT; ?>">0</div>
+        <div class="kpi-label">Total SP Terbit</div>
+        <div class="kpi-sub">SP1 + SP2 + SP3 + SP4</div>
+        <i class="fa fa-files-o icon-bg"></i>
+      </div>
+      <?php $ewKpiClass = ($EW_COUNT > 0) ? 'kpi-danger' : 'kpi-safe'; ?>
+      <div class="kpi <?php echo $ewKpiClass; ?>">
+        <div class="kpi-value" data-count="<?php echo $EW_COUNT; ?>">0</div>
+        <div class="kpi-label">Early Warning</div>
+        <div class="kpi-sub">Siswa mendekati ambang SP</div>
+        <i class="fa fa-bell icon-bg"></i>
       </div>
     </div>
 
