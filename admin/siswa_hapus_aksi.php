@@ -1,6 +1,12 @@
 <?php
 // ==== ACTION ONLY (tanpa header/footer) ====
+require_once __DIR__ . '/../includes/epoin_security.php';
 require_once '../koneksi.php';
+epoin_staff_guard();
+epoin_require_post();
+if (!epoin_csrf_validate()) {
+    epoin_csrf_fail_redirect('siswa.php');
+}
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 

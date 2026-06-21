@@ -7,14 +7,7 @@ if (!isset($koneksi)) {
   die('Koneksi database ($koneksi) tidak ditemukan. Pastikan header.php men-define $koneksi.');
 }
 
-// --- CSRF Token ---
-if (session_status() === PHP_SESSION_NONE) {
-  session_start();
-}
-if (empty($_SESSION['csrf_token'])) {
-  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-$csrf = $_SESSION['csrf_token'];
+// epoin_csrf_token() di-load via header.php → epoin_security.php
 
 // Helper escape
 function e($s) { return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
@@ -343,7 +336,7 @@ $total = count($rows);
 
                 <div class="modal-body">
                   <form id="form-tambah-jurusan" action="jurusan_act.php" method="post" autocomplete="off" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo e($csrf); ?>">
+                    <?= epoin_csrf_field() ?>
 
                     <div class="form-group has-feedback">
                       <label for="jurusan_nama">Tingkat Kelas / Jurusan</label>
@@ -414,11 +407,15 @@ $total = count($rows);
                            href="jurusan_edit.php?id=<?php echo (int)$d['jurusan_id']; ?>">
                           <i class="fa fa-pencil"></i>
                         </a>
-                        <a class="btn btn-del btn-sm btn-hapus" data-toggle="tooltip" title="Hapus data"
-                           href="jurusan_hapus.php?id=<?php echo (int)$d['jurusan_id']; ?>"
-                           data-nama="<?php echo e($d['jurusan_nama']); ?>">
-                          <i class="fa fa-trash"></i>
-                        </a>
+                        <form class="eps-del-form" action="jurusan_hapus.php" method="post" style="display:inline">
+                          <?= epoin_csrf_field() ?>
+                          <input type="hidden" name="id" value="<?php echo (int)$d['jurusan_id']; ?>">
+                          <button type="button" class="btn btn-del btn-sm btn-del-confirm"
+                                  data-nama="<?php echo e($d['jurusan_nama']); ?>"
+                                  data-toggle="tooltip" title="Hapus data">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </form>
                       </div>
                     </td>
                   </tr>

@@ -1,7 +1,13 @@
 <?php
 // kelas_siswa_act.php
-
+require_once __DIR__ . '/../includes/epoin_security.php';
 include '../koneksi.php';
+epoin_staff_guard();
+epoin_require_post();
+if (!epoin_csrf_validate()) {
+    $kelas = (int) ($_POST['kelas'] ?? 0);
+    epoin_csrf_fail_redirect('kelas_siswa.php' . ($kelas > 0 ? '?id=' . $kelas : ''));
+}
 
 // Pastikan data yang dibutuhkan ada
 if (isset($_POST['siswa']) && isset($_POST['kelas'])) {
@@ -36,4 +42,3 @@ if (isset($_POST['siswa']) && isset($_POST['kelas'])) {
 
 // Tutup koneksi database
 mysqli_close($koneksi);
-?>

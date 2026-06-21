@@ -133,6 +133,7 @@
             </div>
 
             <form action="kelas_act.php" method="post">
+              <?= epoin_csrf_field() ?>
 
               <div class="form-group">
                 <label><i class="fa fa-tag"></i> Nama Kelas</label>

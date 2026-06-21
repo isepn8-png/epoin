@@ -1,11 +1,17 @@
 <?php
+require_once __DIR__ . '/../includes/epoin_security.php';
 include '../koneksi.php';
-session_start();
+epoin_ensure_session();
 
 // Cek apakah user sudah login
 if (!isset($_SESSION['id'])) {
     header("location:../login.php");
     exit;
+}
+
+epoin_require_post();
+if (!epoin_csrf_validate()) {
+    epoin_csrf_fail_redirect('kelas_tambah.php');
 }
 
 // Ambil data dari form
@@ -26,4 +32,3 @@ if ($stmt) {
 
 // Redirect kembali ke halaman data kelas
 header("location:kelas.php");
-?>

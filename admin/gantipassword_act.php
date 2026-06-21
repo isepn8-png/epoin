@@ -1,11 +1,17 @@
 <?php
+require_once __DIR__ . '/../includes/epoin_security.php';
 include '../koneksi.php';
-session_start();
+epoin_ensure_session();
 
 // Hanya user yang sudah login yang boleh mengganti password
 if (!isset($_SESSION['id'])) {
     header("location:../login.php");
     exit;
+}
+
+epoin_require_post();
+if (!epoin_csrf_validate()) {
+    epoin_csrf_fail_redirect('gantipassword.php');
 }
 
 $id       = (int) $_SESSION['id'];

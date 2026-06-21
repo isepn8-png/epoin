@@ -159,6 +159,7 @@
 
               <?php $idd = isset($_GET['id']) ? (int)$_GET['id'] : 0; ?>
               <form id="formHapusSiswa" class="pull-right" action="siswa_hapus_aksi.php" method="post" style="margin:0;">
+                <?= epoin_csrf_field() ?>
                 <input type="hidden" name="id" value="<?php echo $idd; ?>">
                 <button type="submit" class="btn btn-success btn-sm btn-hapus" aria-label="Hapus permanen">
                   <i class="fa fa-check"></i> &nbsp;Hapus Permanen

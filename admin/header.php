@@ -6,6 +6,7 @@ include '../koneksi.php';
 
 // === Usage hook bootstrap ===
 require_once __DIR__ . '/../includes/usage_helper.php';
+require_once __DIR__ . '/../includes/epoin_security.php';
 
 // Ambil sekolah_id aktif (satu tenant/satu DB)
 $_r = mysqli_query($koneksi,"SELECT sekolah_id FROM sekolah LIMIT 1");

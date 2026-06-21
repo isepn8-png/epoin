@@ -1,5 +1,11 @@
 <?php
+require_once __DIR__ . '/../includes/epoin_security.php';
 include '../koneksi.php';
+epoin_staff_guard();
+epoin_require_post();
+if (!epoin_csrf_validate()) {
+    epoin_csrf_fail_redirect('ta.php');
+}
 
 $nama   = trim((string) ($_POST['nama'] ?? ''));
 $status = (string) ($_POST['status'] ?? '');

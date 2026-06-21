@@ -123,6 +123,7 @@
                   </div>
                   <div class="modal-body">
                     <form action="ta_act.php" method="post" autocomplete="off">
+                      <?= epoin_csrf_field() ?>
                       <div class="form-group">
                         <label>Nama Tahun Ajaran</label>
                         <input type="text" class="form-control" name="nama" required placeholder="Misal: 2024/2025">
@@ -177,11 +178,15 @@
                           <a class="btn btn-warning btn-sm" title="Edit" href="ta_edit.php?id=<?php echo (int)$d['ta_id']; ?>">
                             <i class="fa fa-cog"></i>
                           </a>
-                          <a class="btn btn-danger btn-sm" title="Hapus"
-                             href="ta_hapus.php?id=<?php echo (int)$d['ta_id']; ?>"
-                             onclick="return confirm('Yakin ingin menghapus Tahun Ajaran ini?');">
-                            <i class="fa fa-trash"></i>
-                          </a>
+                          <form class="eps-del-form" action="ta_hapus.php" method="post" style="display:inline">
+                            <?= epoin_csrf_field() ?>
+                            <input type="hidden" name="id" value="<?php echo (int)$d['ta_id']; ?>">
+                            <button type="button" class="btn btn-danger btn-sm btn-del-confirm"
+                                    data-nama="<?php echo epoin_h($d['ta_nama']); ?>"
+                                    title="Hapus Tahun Ajaran">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </form>
                         </div>
                       </td>
                     </tr>

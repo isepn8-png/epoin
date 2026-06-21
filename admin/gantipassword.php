@@ -82,6 +82,7 @@
             </p>
 
             <form id="pwForm" action="gantipassword_act.php" method="post" autocomplete="new-password">
+              <?= epoin_csrf_field() ?>
               <div class="form-group">
                 <label for="password" style="font-weight:700">Password Baru</label>
                 <div class="input-group input-group-lg">

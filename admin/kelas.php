@@ -418,9 +418,15 @@ if ($resG = mysqli_query($koneksi, $guru_sql)) {
                         <a class="btn btn-edit btn-sm has-tip" href="kelas_edit.php?id=<?php echo (int)$d['kelas_id']; ?>" data-tip="Edit Kelas" title="Edit Kelas">
                           <i class="fa fa-cog"></i> <span class="hidden-xs"></span>
                         </a>
-                        <a class="btn btn-del btn-sm btn-hapus has-tip" href="kelas_hapus.php?id=<?php echo (int)$d['kelas_id']; ?>" data-tip="Hapus Kelas" title="Hapus Kelas">
-                          <i class="fa fa-trash"></i> <span class="hidden-xs"></span>
-                        </a>
+                        <form class="eps-del-form" action="kelas_hapus.php" method="post" style="display:inline">
+                          <?= epoin_csrf_field() ?>
+                          <input type="hidden" name="id" value="<?php echo (int)$d['kelas_id']; ?>">
+                          <button type="button" class="btn btn-del btn-sm btn-del-confirm has-tip"
+                                  data-nama="<?php echo epoin_h($d['kelas_nama']); ?>"
+                                  data-tip="Hapus Kelas" title="Hapus Kelas">
+                            <i class="fa fa-trash"></i> <span class="hidden-xs"></span>
+                          </button>
+                        </form>
                       </div>
                     </td>
                   </tr>

@@ -190,6 +190,7 @@
 
               <div class="modal-body">
                 <form action="kelas_siswa_act.php" method="post">
+                  <?= epoin_csrf_field() ?>
                   <input type="hidden" name="kelas" value="<?php echo (int)$id_kelas; ?>">
                   <div class="table-responsive">
                     <table class="table table-bordered table-striped" id="table-datatable">
