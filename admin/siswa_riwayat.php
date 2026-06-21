@@ -14,6 +14,34 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'issue_sp') {
   require_once __DIR__ . '/../includes/epoin_sp_helpers.php';
   epoin_sp_ajax_issue_endpoint();
 }
+
+// ====== AJAX endpoint: simpan hp_ortu ======
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'save_hp_ortu') {
+  require_once __DIR__ . '/../includes/epoin_security.php';
+  require_once __DIR__ . '/../koneksi.php';
+  header('Content-Type: application/json');
+  $token = $_POST['_csrf'] ?? '';
+  if (!epoin_csrf_validate($token)) {
+    echo json_encode(['ok'=>false,'msg'=>'CSRF tidak valid.']);
+    exit;
+  }
+  $siswaId = (int)($_POST['siswa_id'] ?? 0);
+  $hp = preg_replace('/\D+/', '', trim($_POST['hp_ortu'] ?? ''));
+  if ($siswaId <= 0 || strlen($hp) < 10 || strlen($hp) > 15) {
+    echo json_encode(['ok'=>false,'msg'=>'Nomor HP tidak valid (min 10, maks 15 digit).']);
+    exit;
+  }
+  $stmt = mysqli_prepare($koneksi, 'UPDATE siswa SET hp_ortu=? WHERE siswa_id=?');
+  if ($stmt) {
+    mysqli_stmt_bind_param($stmt, 'si', $hp, $siswaId);
+    $ok = mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    echo json_encode(['ok'=>$ok, 'hp'=>$hp]);
+  } else {
+    echo json_encode(['ok'=>false,'msg'=>'DB error.']);
+  }
+  exit;
+}
 ?>
 
 <?php include 'header.php'; ?>
@@ -78,7 +106,7 @@ if ($negSaldo > 0){
 }
 
 // ===== Pesan WA Orang Tua =====
-$hpOrtu = ''; // kolom hp_ortu belum ada di tabel siswa
+$hpOrtu = trim($k['hp_ortu'] ?? '');
 $spStatusWa = $currentStage['sp'] ? "\xF0\x9F\x94\xB4 Status Pembinaan: ".$currentStage['sp'] : "\xE2\x9C\x85 Status Pembinaan: Aman";
 $waMsg = "Yth. Orang Tua/Wali ".$k['siswa_nama']." (".$k['jurusan_nama'].")\n"
        . "Kami informasikan perkembangan poin disiplin putra-putri Anda:\n\n"
@@ -87,8 +115,10 @@ $waMsg = "Yth. Orang Tua/Wali ".$k['siswa_nama']." (".$k['jurusan_nama'].")\n"
        . "\xE2\x9A\xA0 Total Pelanggaran: ".$totPelang." kasus\n"
        . $spStatusWa."\n\n"
        . "\xe2\x80\x93 Tim BK SMPN 1 Gunungtanjung";
-$waUrl  = "https://wa.me/".($hpOrtu ? preg_replace('/\D/','',$hpOrtu) : '')."?text=".rawurlencode($waMsg);
-$waDisabled = empty($hpOrtu);
+// Normalisasi 08xx → 628xx untuk wa.me
+$waDigits = preg_replace('/\D+/', '', $hpOrtu);
+if ($waDigits !== '' && $waDigits[0] === '0') $waDigits = '62'.substr($waDigits, 1);
+$waUrl = "https://wa.me/{$waDigits}?text=".rawurlencode($waMsg);
 
 // ===== LOG SP: cek apakah SP sudah diterbitkan (tahun berjalan) =====
 mysqli_query($koneksi, "CREATE TABLE IF NOT EXISTS `sp_log` (
@@ -336,19 +366,21 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
       <div class="box-header" style="display:flex;align-items:center;gap:8px;">
         <h3 class="box-title" style="margin:0;">Tentang Siswa</h3>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          <?php if($waDisabled): ?>
-            <span class="btn btn-success btn-sm disabled"
-                  style="cursor:not-allowed;opacity:.6;"
-                  data-toggle="tooltip" data-placement="bottom"
-                  title="Nomor WA orang tua belum tersedia"
-                  aria-disabled="true">
-              <i class="fa fa-whatsapp"></i> Hubungi Ortu
-            </span>
-          <?php else: ?>
-            <a href="<?php echo epoin_h($waUrl); ?>" target="_blank" rel="noopener"
-               class="btn btn-success btn-sm">
+          <?php if($hpOrtu): ?>
+            <a id="btnHubungiOrtu" href="<?php echo epoin_h($waUrl); ?>" target="_blank" rel="noopener"
+               class="btn btn-success btn-sm"
+               title="Kirim notifikasi ke <?php echo epoin_h($hpOrtu); ?>">
               <i class="fa fa-whatsapp"></i> Hubungi Ortu
             </a>
+          <?php else: ?>
+            <button type="button" id="btnHubungiOrtu"
+                    class="btn btn-warning btn-sm"
+                    title="Nomor WA belum ada — klik untuk tambahkan"
+                    data-toggle="modal" data-target="#modalAddHpOrtu">
+              <i class="fa fa-whatsapp"></i>
+              <i class="fa fa-plus" style="font-size:9px;vertical-align:middle;margin-left:-2px"></i>
+              Hubungi Ortu
+            </button>
           <?php endif; ?>
           <a href="siswa.php" class="btn btn-default btn-sm">
             <i class="fa fa-arrow-left"></i> Kembali
@@ -697,6 +729,104 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
 </div>
 
 <?php include 'footer.php'; ?>
+
+<!-- ===== MODAL: Tambah Nomor WA Orang Tua ===== -->
+<?php if(!$hpOrtu): ?>
+<style>
+.wa-modal-hdr{background:linear-gradient(135deg,#059669,#10b981);border:none;padding:14px 18px;border-radius:0}
+.wa-modal-hdr .modal-title{color:#fff;font-weight:700;display:flex;align-items:center;gap:8px;margin:0}
+.wa-modal-hdr .close{color:#fff!important;opacity:1!important;font-size:18px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);line-height:30px;padding:0;text-align:center;border:none;float:right;margin-top:-4px}
+.wa-modal-hdr .close:hover{background:rgba(255,255,255,.3)}
+.wa-siswa-info{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+</style>
+<div class="modal fade" id="modalAddHpOrtu" tabindex="-1" role="dialog" aria-labelledby="modalAddHpOrtuLbl">
+  <div class="modal-dialog" role="document" style="max-width:460px">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;border:none;box-shadow:0 20px 60px rgba(0,0,0,.22)">
+      <div class="modal-header wa-modal-hdr">
+        <h4 class="modal-title" id="modalAddHpOrtuLbl">
+          <i class="fa fa-whatsapp"></i> Tambah Nomor WA Orang Tua
+        </h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:20px 22px">
+        <div class="wa-siswa-info">
+          <i class="fa fa-user-circle" style="font-size:26px;color:#10b981;flex-shrink:0"></i>
+          <div>
+            <div style="font-weight:700;color:#111;font-size:15px"><?php echo epoin_h($k['siswa_nama']); ?></div>
+            <div style="font-size:12px;color:#64748b"><?php echo epoin_h($k['jurusan_nama']); ?> &bull; NIS: <?php echo epoin_h($k['siswa_nis']); ?></div>
+          </div>
+        </div>
+        <p style="color:#374151;font-size:13px;margin-bottom:14px">
+          <i class="fa fa-info-circle" style="color:#f59e0b"></i>
+          Nomor WA orang tua belum tersedia. Tambahkan sekarang untuk mengirim notifikasi.
+        </p>
+        <div class="form-group" style="margin-bottom:6px">
+          <label style="font-weight:700;color:#374151;margin-bottom:4px">
+            <i class="fa fa-phone"></i> No. HP / WA Orang Tua
+          </label>
+          <div class="input-group">
+            <span class="input-group-addon"><i class="fa fa-whatsapp" style="color:#25d366"></i></span>
+            <input type="text" class="form-control" id="inputHpModal"
+                   placeholder="Contoh: 081234567890"
+                   maxlength="20" inputmode="tel" autocomplete="tel">
+          </div>
+          <small class="text-muted">Format 08xx atau 628xx (min 10 digit)</small>
+          <div id="hpValidMsg" style="color:#dc2626;font-size:12px;margin-top:4px;display:none"></div>
+        </div>
+        <a href="siswa_edit.php?id=<?php echo $id_siswa; ?>" style="font-size:12px;color:#2563eb">
+          <i class="fa fa-external-link"></i> Edit data lengkap siswa &rarr;
+        </a>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #e5e7eb;padding:12px 22px;display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-default btn-sm" id="btnSimpanSaja">
+          <i class="fa fa-save"></i> Simpan Saja
+        </button>
+        <button type="button" class="btn btn-success btn-sm" id="btnSimpanKirimWa">
+          <i class="fa fa-whatsapp"></i> Simpan &amp; Kirim WA
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var siswaId = <?php echo $id_siswa; ?>;
+  var waMsg   = <?php echo json_encode($waMsg, JSON_UNESCAPED_UNICODE); ?>;
+
+  function getHp(){ return (document.getElementById('inputHpModal').value||'').replace(/\D/g,''); }
+  function showErr(msg){ var el=document.getElementById('hpValidMsg'); el.textContent=msg; el.style.display=msg?'block':'none'; }
+
+  function saveHp(callback){
+    var hp = getHp();
+    if(hp.length < 10 || hp.length > 15){ showErr('Nomor tidak valid (min 10, maks 15 digit).'); return; }
+    showErr('');
+    var fd = new FormData();
+    fd.append('_csrf', window.EPOIN_CSRF);
+    fd.append('siswa_id', siswaId);
+    fd.append('hp_ortu', hp);
+    fetch('siswa_riwayat.php?ajax=save_hp_ortu', {
+      method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if(d.ok){ callback(d.hp); } else { showErr('Gagal: '+(d.msg||'error tidak dikenal')); }
+    }).catch(function(){ showErr('Koneksi error.'); });
+  }
+
+  document.getElementById('btnSimpanSaja').addEventListener('click', function(){
+    saveHp(function(){ $('#modalAddHpOrtu').modal('hide'); location.reload(); });
+  });
+
+  document.getElementById('btnSimpanKirimWa').addEventListener('click', function(){
+    saveHp(function(hp){
+      $('#modalAddHpOrtu').modal('hide');
+      var digits = hp; if(digits.charAt(0)==='0') digits='62'+digits.substring(1);
+      window.open('https://wa.me/'+digits+'?text='+encodeURIComponent(waMsg),'_blank','noopener');
+      location.reload();
+    });
+  });
+})();
+</script>
+<?php endif; ?>
 
 <script>
   // ===== aktifkan Bootstrap tooltip =====
