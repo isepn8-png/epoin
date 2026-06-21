@@ -12,6 +12,7 @@
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 date_default_timezone_set('Asia/Jakarta');
+require_once __DIR__ . '/../includes/epoin_security.php';
 
 /* ====== include auth + koneksi ====== */
 $__auth = __DIR__ . '/../includes/auth.php';
@@ -504,7 +505,10 @@ if ($act==='create' || $act==='update'){
   }
 }
 if ($act==='delete'){
-  $id=(int)($_GET['id'] ?? 0);
+  if(($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !epoin_csrf_validate()){
+    header('Location: ujian_gform.php?alert=invalid'); exit;
+  }
+  $id=(int)($_POST['id'] ?? 0);
   if($id<=0) exit('ID tidak valid.');
   $rowU = db_one("SELECT * FROM `ujian_gform` WHERE $UJ_PK=? LIMIT 1",array($id));
   if(!$rowU) exit('Data tidak ditemukan.');
@@ -961,9 +965,17 @@ include __DIR__.'/header.php'; ?>
                         <a class="btn btn-xs btn-warning" href="ujian_gform.php?edit=<?= (int)$d['id'] ?>#form-ujian" data-toggle="tooltip" title="Edit pengaturan">
                           <i class="fa fa-pencil"></i>
                         </a>
-                        <a class="btn btn-xs btn-danger" href="ujian_gform.php?__act=delete&id=<?= (int)$d['id'] ?>" onclick="return confirm('Anda yakin ingin menghapus ujian ini?')" data-toggle="tooltip" title="Hapus">
-                          <i class="fa fa-trash"></i>
-                        </a>
+                        <form method="post" action="ujian_gform.php" class="eps-del-form" style="display:inline">
+                          <input type="hidden" name="__act" value="delete">
+                          <input type="hidden" name="id" value="<?= (int)$d['id'] ?>">
+                          <?php echo epoin_csrf_field(); ?>
+                          <button type="button"
+                            class="btn btn-xs btn-danger btn-del-confirm"
+                            data-toggle="tooltip" title="Hapus"
+                            data-nama="<?= e($d['judul'] ?? '') ?>">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </form>
                       </td>
                     </tr>
                   <?php endforeach; if(empty($DATA_PAGE)): ?>

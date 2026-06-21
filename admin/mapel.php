@@ -2,6 +2,7 @@
 // ====== ACTION HANDLER (harus di atas output HTML agar bisa redirect) ======
 include '../koneksi.php';
 session_start();
+require_once __DIR__ . '/../includes/epoin_security.php';
 if(!isset($_SESSION['level']) || $_SESSION['level'] !== "administrator"){
   header("location:../admin.php?alert=belum_login");
   exit;
@@ -76,7 +77,11 @@ if ($action === 'edit') {
 
 // Hapus mapel
 if ($action === 'hapus') {
-  $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+  if(($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !epoin_csrf_validate()){
+    header("location: mapel.php?alert=invalid");
+    exit;
+  }
+  $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
   if($id<=0){
     header("location: mapel.php?alert=invalid");
     exit;
@@ -282,13 +287,17 @@ if($_qCount && ($__r = mysqli_fetch_assoc($_qCount))){ $total_mapel = (int)$__r[
                             data-nama="<?php echo htmlspecialchars($r['mapel_nama']); ?>">
                             <i class="fa fa-pencil"></i>
                           </button>
-                          <a
-                            class="btn btn-del btn-sm btn-icon"
-                            data-toggle="tooltip" title="Hapus mapel"
-                            href="mapel.php?action=hapus&id=<?php echo (int)$r['mapel_id']; ?>"
-                            onclick="return confirm('Yakin ingin hapus mapel ini?');">
-                            <i class="fa fa-trash"></i>
-                          </a>
+                          <form method="post" action="mapel.php" class="eps-del-form" style="display:inline">
+                            <input type="hidden" name="action" value="hapus">
+                            <input type="hidden" name="id" value="<?php echo (int)$r['mapel_id']; ?>">
+                            <?php echo epoin_csrf_field(); ?>
+                            <button type="button"
+                              class="btn btn-del btn-sm btn-icon btn-del-confirm"
+                              data-toggle="tooltip" title="Hapus mapel"
+                              data-nama="<?php echo htmlspecialchars($r['mapel_nama'], ENT_QUOTES, 'UTF-8'); ?>">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </form>
                         </div>
                       </td>
                     </tr>
