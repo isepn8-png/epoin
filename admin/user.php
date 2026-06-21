@@ -36,23 +36,22 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <?php 
-                  include '../koneksi.php';
+                  <?php
                   $no=1;
                   $data = mysqli_query($koneksi,"SELECT * FROM user");
                   while($d = mysqli_fetch_array($data)){
                     ?>
                     <tr>
                       <td><?php echo $no++; ?></td>
-                      <td><?php echo $d['user_nama']; ?></td>
-                      <td><?php echo $d['user_username']; ?></td>
-                      <td><?php echo $d['user_level']; ?></td>
+                      <td><?php echo epoin_h($d['user_nama']); ?></td>
+                      <td><?php echo epoin_h($d['user_username']); ?></td>
+                      <td><?php echo epoin_h($d['user_level']); ?></td>
                       <td>
                         <center>
                           <?php if($d['user_foto'] == ""){ ?>
                             <img src="../gambar/sistem/user.png" style="width: 30px;height: auto">
                           <?php }else{ ?>
-                            <img src="../gambar/user/<?php echo $d['user_foto'] ?>" style="width: 30px;height: auto">
+                            <img src="../gambar/user/<?php echo epoin_h($d['user_foto']) ?>" style="width: 30px;height: auto">
                           <?php } ?>
                         </center>
                       </td>
