@@ -482,10 +482,11 @@ include 'header.php';
   </div>
 </div>
 
-<!-- Inisialisasi DataTables + Select2 + Filter Kelas by TA -->
+<?php include 'footer.php'; ?>
+
 <script>
 $(function () {
-  // ===== DataTables =====
+  // ===== DataTables (setelah footer.php agar pakai DT 1.13.4) =====
   if ($.fn.dataTable && $.fn.dataTable.ext) { $.fn.dataTable.ext.errMode = 'console'; }
   var $tbl = $('#table-datatable');
   if ($.fn.DataTable && $.fn.DataTable.isDataTable($tbl)) {
@@ -495,21 +496,20 @@ $(function () {
   if ($.fn.DataTable) {
     var t = $tbl.DataTable({
       destroy: true,
-      responsive: true,
       autoWidth: false,
-      order: [[1,'desc'],[2,'asc'],[3,'asc']], // TA, Kelas, Mapel
+      order: [[1,'desc'],[2,'asc'],[3,'asc']], // TA terbaru, Kelas, Mapel
       columnDefs: [{ targets:[0,5], orderable:false }],
       pageLength: 10,
-      lengthMenu: [[10,25,50,-1],[10,25,50,"Semua"]],
+      lengthMenu: [[10,25,50,-1],[10,25,50,'Semua']],
       dom: "<'row'<'col-sm-6'l><'col-sm-6'f>>" + "rt" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
       language: {
-        search: "Cari:",
-        lengthMenu: "Tampilkan _MENU_ data",
-        info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
-        infoEmpty: "Tidak ada data",
-        zeroRecords: "Tidak ditemukan data yang cocok",
-        infoFiltered: "(difilter dari total _MAX_ data)",
-        paginate: { first:"Pertama", last:"Terakhir", next:"Berikutnya", previous:"Sebelumnya" }
+        search: 'Cari:',
+        lengthMenu: 'Tampilkan _MENU_ data',
+        info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+        infoEmpty: 'Tidak ada data',
+        zeroRecords: 'Tidak ditemukan data yang cocok',
+        infoFiltered: '(difilter dari total _MAX_ data)',
+        paginate: { first:'Pertama', last:'Terakhir', next:'Berikutnya', previous:'Sebelumnya' }
       }
     });
     t.on('order.dt search.dt', function () {
@@ -535,18 +535,15 @@ $(function () {
 
   // ===== Filter Kelas by TA (client-side, pakai data-ta pada <option>) =====
   function filterKelas($kelas, taId){
-    var hasSelected = false;
     $kelas.find('option').each(function(){
       var $opt = $(this);
       var dta = $opt.data('ta');
       if (!$opt.val()) { $opt.prop('disabled', false).show(); return; }
-      if (!taId) { $opt.prop('disabled', false).show(); return; }
+      if (!taId)       { $opt.prop('disabled', false).show(); return; }
       var match = String(dta) === String(taId);
       $opt.prop('disabled', !match);
       $opt.toggle(match);
-      if (match && !hasSelected) { hasSelected = true; }
     });
-    // reset nilai jika option terpilih tidak cocok
     var cur = $kelas.val();
     if (cur) {
       var curOpt = $kelas.find('option[value="'+cur+'"]');
@@ -559,57 +556,34 @@ $(function () {
   // ===== Modal Tambah =====
   $('#modal_tambah').on('shown.bs.modal', function(){
     var $m = $(this);
-    var $ta    = $('#add_ta');
-    var $kelas = $('#add_kelas');
-    var $mapel = $('#add_mapel');
-    var $guru  = $('#add_guru');
-    initSel2($ta, $m);
-    initSel2($kelas, $m);
-    initSel2($mapel, $m);
-    initSel2($guru, $m);
-
-    // filter awal sesuai TA default (mis. TA aktif)
+    var $ta=$('#add_ta'), $kelas=$('#add_kelas'), $mapel=$('#add_mapel'), $guru=$('#add_guru');
+    initSel2($ta,$m); initSel2($kelas,$m); initSel2($mapel,$m); initSel2($guru,$m);
     filterKelas($kelas, $ta.val());
-
-    // saat TA berubah
     $ta.off('change._f').on('change._f', function(){ filterKelas($kelas, this.value); });
   });
 
   // ===== Modal Edit =====
   $(document).on('click', '.btn-edit', function(){
-    var id    = this.getAttribute('data-id');
-    var ta    = this.getAttribute('data-ta');
-    var kelas = this.getAttribute('data-kelas');
-    var mapel = this.getAttribute('data-mapel');
-    var guru  = this.getAttribute('data-guru');
-
+    var id=this.getAttribute('data-id'), ta=this.getAttribute('data-ta'),
+        kelas=this.getAttribute('data-kelas'), mapel=this.getAttribute('data-mapel'),
+        guru=this.getAttribute('data-guru');
     $('#edit_id').val(id);
     var $m = $('#modal_edit');
     $m.modal('show');
-
     $m.on('shown.bs.modal', function(){
-      var $ta    = $('#edit_ta');
-      var $kelas = $('#edit_kelas');
-      var $mapel = $('#edit_mapel');
-      var $guru  = $('#edit_guru');
-
-      if(!$ta.hasClass('select2-hidden-accessible'))   initSel2($ta, $m);
-      if(!$kelas.hasClass('select2-hidden-accessible'))initSel2($kelas, $m);
-      if(!$mapel.hasClass('select2-hidden-accessible'))initSel2($mapel, $m);
-      if(!$guru.hasClass('select2-hidden-accessible')) initSel2($guru, $m);
-
+      var $ta=$('#edit_ta'), $kelas=$('#edit_kelas'), $mapel=$('#edit_mapel'), $guru=$('#edit_guru');
+      if(!$ta.hasClass('select2-hidden-accessible'))    initSel2($ta,$m);
+      if(!$kelas.hasClass('select2-hidden-accessible')) initSel2($kelas,$m);
+      if(!$mapel.hasClass('select2-hidden-accessible')) initSel2($mapel,$m);
+      if(!$guru.hasClass('select2-hidden-accessible'))  initSel2($guru,$m);
       $ta.val(ta).trigger('change.select2');
       filterKelas($kelas, ta);
       $kelas.val(kelas).trigger('change.select2');
-
       $mapel.val(mapel).trigger('change.select2');
       $guru.val(guru).trigger('change.select2');
-
       $ta.off('change._f').on('change._f', function(){ filterKelas($kelas, this.value); });
     });
   });
 
 });
 </script>
-
-<?php include 'footer.php'; ?>

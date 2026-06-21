@@ -204,9 +204,11 @@
 
 </div>
 
+<?php include 'footer.php'; ?>
+
 <script>
 $(function(){
-  // DataTables setup – full-width & konsisten
+  // DataTables setup – setelah footer.php agar pakai DT 1.13.4
   if ($.fn.dataTable && $.fn.dataTable.ext) { $.fn.dataTable.ext.errMode = 'console'; }
   var $tbl = $('#table-datatable');
   if ($.fn.DataTable && $.fn.DataTable.isDataTable($tbl)) {
@@ -216,21 +218,20 @@ $(function(){
   if ($.fn.DataTable) {
     var t = $tbl.DataTable({
       destroy: true,
-      responsive: true,
       autoWidth: false,
       order: [[2,'desc'],[1,'desc']], // Status aktif dulu, lalu TA terbaru
       columnDefs: [{ targets:[0,3], orderable:false }],
       pageLength: 10,
-      lengthMenu: [[10,25,50,-1],[10,25,50,"Semua"]],
+      lengthMenu: [[10,25,50,-1],[10,25,50,'Semua']],
       dom: "<'row'<'col-sm-6'l><'col-sm-6'f>>" + "rt" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
       language: {
-        search: "Cari:",
-        lengthMenu: "Tampilkan _MENU_ data",
-        info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
-        infoEmpty: "Tidak ada data",
-        zeroRecords: "Tidak ditemukan data yang cocok",
-        infoFiltered: "(difilter dari total _MAX_ data)",
-        paginate: { first:"Pertama", last:"Terakhir", next:"Berikutnya", previous:"Sebelumnya" }
+        search: 'Cari:',
+        lengthMenu: 'Tampilkan _MENU_ data',
+        info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+        infoEmpty: 'Tidak ada data',
+        zeroRecords: 'Tidak ditemukan data yang cocok',
+        infoFiltered: '(difilter dari total _MAX_ data)',
+        paginate: { first:'Pertama', last:'Terakhir', next:'Berikutnya', previous:'Sebelumnya' }
       }
     });
     t.on('order.dt search.dt', function () {
@@ -240,5 +241,3 @@ $(function(){
   }
 });
 </script>
-
-<?php include 'footer.php'; ?>
