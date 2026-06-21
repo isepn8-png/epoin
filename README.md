@@ -78,3 +78,4 @@ GNU General Public License v3.0. Lihat file LICENSE untuk detail.
 Isep Nursami — Guru Informatika, SMPN 1 Gunungtanjung, Tasikmalaya
 Founder INUSI.ID
 Email lewat website: https://epoinsiswa.com
+"# test auto deploy" 
