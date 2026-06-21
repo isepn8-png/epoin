@@ -429,7 +429,7 @@ $data = mysqli_query($koneksi, "
               <div class="left">
                 <div class="filters-wrap" id="filters-wrap" style="display:flex; gap:8px; align-items:center;">
                   <select id="filter-jurusan" class="form-control input-sm" style="min-width:150px;">
-                    <option value="">Semua Kelas</option>
+                    <option value="">Semua Tingkat/Jur</option>
                     <?php foreach($jurusanList as $j): ?>
                       <option value="<?php echo e($j['jurusan_nama']); ?>"><?php echo e($j['jurusan_nama']); ?> (<?php echo (int)$j['jml']; ?>)</option>
                     <?php endforeach; ?>
