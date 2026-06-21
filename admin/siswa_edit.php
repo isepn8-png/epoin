@@ -323,6 +323,23 @@ function status_class($s){
                     </div>
 
                     <div class="form-section">
+                      <h4><i class="fa fa-phone" style="color:var(--o-500);margin-right:4px"></i>Kontak Orang Tua / Wali</h4>
+                      <div class="form-group">
+                        <label><i class="fa fa-whatsapp"></i> &nbsp;No. HP / WA Orang Tua <span class="text-muted" style="font-weight:400">(opsional)</span></label>
+                        <div class="input-group">
+                          <span class="input-group-addon"><i class="fa fa-whatsapp" style="color:#25d366"></i></span>
+                          <input type="text" class="form-control track-change" name="hp_ortu" id="hp_ortu"
+                                 placeholder="Contoh: 081234567890 atau 6281234567890"
+                                 inputmode="tel" maxlength="20"
+                                 value="<?php echo e($d['hp_ortu'] ?? ''); ?>">
+                        </div>
+                        <small class="text-muted">
+                          Format 08xx (min 10 digit) atau 628xx. Digunakan untuk notifikasi WhatsApp ke orang tua.
+                        </small>
+                      </div>
+                    </div>
+
+                    <div class="form-section">
                       <h4>Keamanan Akun</h4>
 
                       <div class="form-group">

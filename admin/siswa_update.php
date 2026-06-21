@@ -20,6 +20,8 @@ $nis      = trim($_POST['nis'] ?? '');
 $jurusan  = isset($_POST['jurusan']) ? (int)$_POST['jurusan'] : 0;
 $status   = strtolower(trim($_POST['status'] ?? 'aktif'));
 $pwdRaw   = trim($_POST['password'] ?? ''); // kosong = tidak ganti
+$hpOrtu   = preg_replace('/\D+/', '', trim($_POST['hp_ortu'] ?? ''));
+if (strlen($hpOrtu) > 20) $hpOrtu = substr($hpOrtu, 0, 20);
 
 // Normalisasi & validasi ringan server-side
 $allowedStatus = ['aktif','tamat','pindah','dikeluarkan'];
@@ -83,9 +85,10 @@ if (move_uploaded_file($_FILES['file']['tmp_name'], $abs_path)) {
 
 
 // ---- Build UPDATE dinamis (prepared statement) ----
-$sets   = "siswa_nama=?, siswa_nis=?, siswa_jurusan=?, siswa_status=?";
-$params = [$nama, $nis, $jurusan, $status];
-$types  = "ssis"; // s(nama) s(nis) i(jurusan) s(status)
+$hpOrtuVal = $hpOrtu !== '' ? $hpOrtu : null;
+$sets   = "siswa_nama=?, siswa_nis=?, siswa_jurusan=?, siswa_status=?, hp_ortu=?";
+$params = [$nama, $nis, $jurusan, $status, $hpOrtuVal];
+$types  = "ssiss"; // s(nama) s(nis) i(jurusan) s(status) s(hp_ortu)
 
 if ($pwdRaw !== '') {
   // Catatan: tetap gunakan md5 agar konsisten dengan data lama (sesuai skrip original)
