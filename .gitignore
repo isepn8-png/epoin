@@ -36,6 +36,7 @@ import_siswa.xlsx
 
 # IDE
 .vscode/
+.claude/
 
 # Dangerous tools — JANGAN deploy ke production
 admin/phpinfo.php
