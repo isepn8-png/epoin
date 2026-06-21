@@ -384,8 +384,11 @@ $data = mysqli_query($koneksi, "
           <div class="box-header">
             <h3 class="box-title">Siswa</h3>
             <div class="btn-group pull-right">
-              <a href="siswa_import.php" class="btn btn-danger btn-sm btn-elegant" data-toggle="tooltip" title="Import dari Excel">
-                <i class="fa fa-file-excel-o"></i> &nbsp;Import
+              <a href="hp_ortu_import.php" class="btn btn-success btn-sm btn-elegant" data-toggle="tooltip" title="Import HP Orang Tua via Excel">
+                <i class="fa fa-whatsapp"></i> &nbsp;Import HP Ortu
+              </a>
+              <a href="siswa_import.php" class="btn btn-danger btn-sm btn-elegant" data-toggle="tooltip" title="Import data siswa dari Excel">
+                <i class="fa fa-file-excel-o"></i> &nbsp;Import Siswa
               </a>
               <a href="siswa_tambah.php" class="btn btn-primary btn-sm btn-elegant" data-toggle="tooltip" title="Tambah siswa baru">
                 <i class="fa fa-plus"></i> &nbsp;Tambah
