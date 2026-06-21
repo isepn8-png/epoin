@@ -573,7 +573,7 @@ td.col-net.zero{ color:#777; font-weight:700; }
                   <a href="<?php echo $basePath; ?>" class="btn btn-rect btn-reset" data-toggle="tooltip" title="Reset filter">
                     <i class="fa fa-refresh"></i> RESET
                   </a>
-                  <a href="?<?php echo http_build_query(array_merge($_GET,['export'=>'excel'])); ?>" class="btn btn-rect btn-excel" data-toggle="tooltip" title="Unduh sebagai Excel (.xls)">
+                  <a href="?<?php echo htmlspecialchars(http_build_query(array_merge($_GET,['export'=>'excel'])), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-rect btn-excel" data-toggle="tooltip" title="Unduh sebagai Excel (.xls)">
                     <i class="fa fa-file-excel-o"></i> Export Excel
                   </a>
                   <?php
