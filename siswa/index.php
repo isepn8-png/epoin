@@ -492,7 +492,7 @@ $toSafe = $saldo < 0 ? abs($saldo) : 0;
   }
 
   /* =======================================================
-     ✨ JENJANG PEMBINAAN — (tetap)
+     ✨ JENJANG PEMBINAAN — Stepper Vertikal Interaktif
      ======================================================= */
   .jenjang-cta{
     display:block;width:100%;
@@ -504,74 +504,141 @@ $toSafe = $saldo < 0 ? abs($saldo) : 0;
   }
   .jenjang-cta:hover{ background:linear-gradient(135deg,#1e40af,#2563eb); }
 
-  /* Overlay: full-viewport + selalu center. Offset longhand (top/right/bottom/left)
-     = anti "nempel kiri" pada browser/tema yang mengabaikan shorthand `inset`. */
+  /* ── Overlay (center, anti-nempel-kiri) ── */
   .jenjang-overlay{ position:fixed; top:0; right:0; bottom:0; left:0; inset:0; margin:0;
     display:none; align-items:center; justify-content:center;
-    padding:24px; box-sizing:border-box;
-    background:rgba(2,6,23,.55); backdrop-filter: blur(3px);
+    padding:20px; box-sizing:border-box;
+    background:rgba(2,6,23,.56); backdrop-filter:blur(3px);
     z-index:100000; opacity:0; transition:opacity .22s ease; }
   .jenjang-overlay.show{ display:flex !important; align-items:center !important; justify-content:center !important; }
   .jenjang-overlay.reveal{ opacity:1; }
 
-  .jenjang-modal{ width:920px;max-width:100%;max-height:calc(100vh - 48px);overflow:auto;background:#ffffff;color:#0f172a;border-radius:20px;border:1px solid #e5e7eb;box-shadow:0 28px 80px rgba(2,6,23,.24);transform: translateY(16px) scale(.985);transition: transform .25s ease;-webkit-overflow-scrolling:touch; }
-  .jenjang-overlay.reveal .jenjang-modal{ transform: translateY(0) scale(1); }
+  /* ── Modal Shell — flex column, header fixed, body scrolls ── */
+  .jenjang-modal{ width:960px;max-width:100%;max-height:calc(100vh - 40px);
+    background:#fff;border-radius:20px;border:1px solid #e5e7eb;
+    box-shadow:0 28px 80px rgba(2,6,23,.26);
+    display:flex;flex-direction:column;overflow:hidden;
+    transform:translateY(16px) scale(.985);transition:transform .25s ease; }
+  .jenjang-overlay.reveal .jenjang-modal{ transform:translateY(0) scale(1); }
 
-  .jenjang-head{ position:sticky;top:0;z-index:2;padding:18px 22px;background:linear-gradient(90deg,#3b82f6 0%, #60a5fa 100%);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top-left-radius:20px;border-top-right-radius:20px;box-shadow:0 6px 18px rgba(2,6,23,.25); }
-  .jenjang-title{ margin:0;font-weight:900;font-size:21px;line-height:1.3;letter-spacing:.3px;display:flex;align-items:center;gap:10px; }
-  .jenjang-close{ border:none;background:#ffffff1a;color:#fff;width:40px;height:40px;border-radius:999px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:background .2s ease, transform .2s ease; }
+  /* ── Header ── */
+  .jenjang-head{ flex:0 0 auto;padding:18px 22px;
+    background:linear-gradient(90deg,#0b3c7c 0%,#1e3a8a 100%);
+    color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border-top-left-radius:20px;border-top-right-radius:20px;
+    box-shadow:0 4px 14px rgba(2,6,23,.22); }
+  .jenjang-title{ margin:0;font-weight:900;font-size:20px;line-height:1.3; }
+  .jenjang-close{ border:none;background:#ffffff1a;color:#fff;width:40px;height:40px;
+    border-radius:999px;cursor:pointer;font-size:16px;
+    display:flex;align-items:center;justify-content:center;flex:0 0 40px;
+    transition:background .2s ease,transform .2s ease; }
   .jenjang-close:hover{ background:#ffffff33;transform:rotate(90deg); }
-  .jenjang-body{ padding:22px 24px 26px; }
-  .jenjang-desc{ color:#334155;margin:4px 0 16px;font-size:15.5px;line-height:1.65; }
 
-  .jenjang-list{ list-style:none;padding:0;margin:0;display:grid;gap:14px; }
-  .jenjang-item{ --accent:#22c55e; display:flex;flex-direction:column;gap:14px; padding:20px 22px;border-radius:16px;background:#fff;
-    border:1px solid #e5e7eb;border-left:8px solid var(--accent); box-shadow:0 6px 14px rgba(2,6,23,.06); transition:box-shadow .25s ease, transform .12s ease, border-color .25s ease; }
-  .jenjang-item:hover{ transform:translateY(-2px);box-shadow:0 16px 32px rgba(2,6,23,.14); }
-  .jenjang-item[data-level="1"]{ --accent:#22c55e; } .jenjang-item[data-level="2"]{ --accent:#f59e0b; } .jenjang-item[data-level="3"]{ --accent:#fb923c; } .jenjang-item[data-level="4"]{ --accent:#ef4444; } .jenjang-item[data-level="5"]{ --accent:#f43f5e; } .jenjang-item[data-level="6"]{ --accent:#dc2626; }
+  /* ── Body ── */
+  .jenjang-body{ flex:1 1 auto;overflow:hidden;min-height:0; }
 
-  .j-head{ display:flex;align-items:center;gap:14px; }
-  .range-pill{ display:flex;align-items:center;justify-content:center; width:5.2rem;min-width:5.2rem;height:2.6rem;border-radius:0.9rem; font-weight:900;font-size:1rem;color:#0b1220;background:linear-gradient(135deg,#eff6ff,#dbeafe); border:1px solid #c7d2fe;box-shadow:0 4px 10px rgba(37,99,235,.12) inset, 0 4px 10px rgba(2,6,23,.04); }
-  .level-1{background:linear-gradient(135deg,#dcfce7,#bbf7d0);} .level-2{background:linear-gradient(135deg,#fff7ed,#ffedd5);} .level-3{background:linear-gradient(135deg,#fffbeb,#fde68a);} .level-4{background:linear-gradient(135deg,#fee2e2,#fecaca);} .level-5{background:linear-gradient(135deg,#ffe4e6,#fecdd3);} .level-6{background:linear-gradient(135deg,#fee2e2,#fecaca);border:1px solid #fecaca;}
+  /* ── 2-Kolom Layout ── */
+  .jst-layout{ display:grid;grid-template-columns:200px 1fr;height:100%;overflow:hidden; }
 
-  .j-title{ font-weight:900;font-size:1.28rem;line-height:1.3;letter-spacing:.1px;color:#111827;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
-  .j-sub{ color:#475569;margin-top:6px;font-size:1rem;line-height:1.6; }
-  .j-right{ margin-left:auto;display:flex;align-items:center;gap:10px; }
-  .jenjang-icon{ width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#eef2ff;border:1px solid #e5e7eb;color:var(--accent); }
-  .j-toggle{ width:38px;height:38px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;cursor:pointer; display:flex;align-items:center;justify-content:center;transition:transform .2s ease, background .2s ease; }
-  .j-toggle:hover{ background:#f8fafc; }
-  .j-toggle i{ transition: transform .25s ease; }
-  .jenjang-item.open .j-toggle i{ transform: rotate(180deg); }
+  /* ── KIRI: Timeline ── */
+  .jst-timeline{ background:#f8fafc;border-right:1px solid #e5e7eb;
+    display:flex;flex-direction:column;overflow:hidden; }
+  .jst-status-mini{ padding:14px 16px;border-bottom:1px solid #e5e7eb;flex:0 0 auto; }
+  .jst-saldo-text{ font-size:13px;color:#374151;font-weight:600; }
+  .jst-saldo-sub{ font-size:12px;color:#6b7280;margin-top:2px; }
 
-  .j-more{ overflow:hidden;max-height:0;opacity:0;transition:max-height .35s ease, opacity .3s ease; }
-  .jenjang-item.open .j-more{ opacity:1; }
+  .jst-steps{ list-style:none;padding:10px 0 16px;margin:0;
+    position:relative;flex:1 1 auto;overflow-y:auto; }
+  /* garis vertikal penghubung antar node */
+  .jst-steps::before{ content:'';position:absolute;left:33px;top:28px;bottom:28px;
+    width:2px;background:#e2e8f0;z-index:0; }
 
-  .point-tags{ display:flex;flex-wrap:wrap;gap:8px;margin-top:6px; }
-  .tag{ display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px; font-size:.9rem;font-weight:800;background:#f1f5f9;color:#0f172a;border:1px solid #e5e7eb; }
-  .tag i{ opacity:.8; }
+  .jst-step{ position:relative;display:flex;align-items:center;
+    padding:7px 10px 7px 0;cursor:pointer;user-select:none; }
+  .jst-step:hover .jst-node{ transform:scale(1.1); }
 
-  .point-list{ margin:10px 0 2px 0;padding-left:0;list-style:none;font-size:1rem;line-height:1.75;color:#334155; }
-  .point-list li{ display:flex;gap:10px;align-items:flex-start;margin:6px 0; }
-  .point-list li .dot{ width:10px;height:10px;margin-top:.45rem;border-radius:999px;background:var(--accent); box-shadow:0 0 0 3px rgba(148,163,184,.2); }
+  .jst-node{ position:relative;z-index:1;flex:0 0 38px;width:38px;height:38px;
+    margin-left:14px;border-radius:999px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:900;letter-spacing:.2px;
+    background:#fff;color:#9ca3af;border:2.5px solid #d1d5db;
+    box-shadow:0 2px 6px rgba(2,6,23,.07);
+    transition:border-color .2s,background .2s,color .2s,transform .18s,box-shadow .2s; }
 
-  .is-current{ box-shadow:0 0 0 2px #fff inset, 0 0 0 2px var(--accent), 0 22px 38px rgba(2,6,23,.10); position:relative; }
-  .is-current::after{ content:"\25CF  Saat ini";position:absolute;top:-12px;right:16px; background:var(--accent);color:#fff;font-weight:900;font-size:.82rem;letter-spacing:.2px;padding:.34rem .8rem;border-radius:999px; text-shadow:0 1px 2px rgba(0,0,0,.28); box-shadow:0 4px 12px rgba(2,6,23,.22); }
+  /* Step sedang dipilih (sel = selected) */
+  .jst-step.sel .jst-node{
+    background:var(--sc,#22c55e);border-color:var(--sc,#22c55e);color:#fff;
+    box-shadow:0 0 0 4px rgba(0,0,0,.07),0 4px 12px rgba(2,6,23,.14); }
+  .jst-step.sel .jst-lbl-name{ color:var(--sc,#22c55e);font-weight:800; }
 
-  /* Badge SP1–SP4 di judul tingkat (sebelumnya tak ber-style → tampil polos) */
-  .badge-sp{ display:inline-flex;align-items:center;font-weight:900;font-size:.72rem;letter-spacing:.4px;line-height:1;color:#fff;background:#f59e0b;padding:.24rem .6rem;border-radius:999px;text-transform:uppercase;box-shadow:0 2px 6px rgba(2,6,23,.18); }
-  .badge-sp.sp2{ background:#fb923c; } .badge-sp.sp3{ background:#ef4444; } .badge-sp.sp4{ background:#f43f5e; }
+  /* Step siswa saat ini (dari PHP) — beri border + pulse saat tidak sedang dipilih */
+  .jst-step.is-current:not(.sel) .jst-node{
+    border-color:var(--sc,#22c55e);color:var(--sc,#22c55e);
+    animation:jst-pulse 2.2s ease-in-out infinite; }
+  @keyframes jst-pulse{
+    0%,100%{ box-shadow:0 0 0 0 transparent,0 2px 6px rgba(2,6,23,.07); }
+    50%{     box-shadow:0 0 0 7px rgba(2,6,23,.05),0 2px 8px rgba(2,6,23,.1); } }
 
-  @media (max-width:600px){
-    .jenjang-overlay{ padding:14px; }
-    .jenjang-modal{ max-height:calc(100vh - 28px); border-radius:16px; }
-    .jenjang-head{ padding:16px 18px; }
-    .jenjang-title{ font-size:18px; }
-    .jenjang-body{ padding:18px 16px 20px; }
-    .jenjang-item{ padding:16px 16px; }
-    .j-head{ flex-wrap:wrap; }
-    .j-title{ font-size:1.12rem; }
-    .j-sub{ font-size:.95rem; }
-    .range-pill{ width:4.4rem;min-width:4.4rem;height:2.4rem; }
+  .jst-lbl{ padding-left:11px;flex:1;min-width:0; }
+  .jst-lbl-name{ display:block;font-size:13px;font-weight:700;color:#374151;
+    line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    transition:color .2s ease; }
+  .jst-lbl-range{ display:block;font-size:11px;color:#9ca3af;margin-top:2px;white-space:nowrap; }
+  .jst-now-badge{ display:inline-block;font-size:9px;font-weight:900;letter-spacing:.4px;
+    text-transform:uppercase;background:var(--sc,#22c55e);color:#fff;
+    padding:2px 7px;border-radius:999px;margin-top:3px; }
+
+  /* ── KANAN: Detail Panel ── */
+  .jst-detail{ overflow-y:auto;-webkit-overflow-scrolling:touch; }
+  .jst-detail-inner{ padding:26px 28px;opacity:1;transition:opacity .16s ease; }
+  .jst-detail-inner.fading{ opacity:0; }
+
+  .jst-dtitle{ font-size:1.6rem;font-weight:900;margin:0 0 12px;line-height:1.2; }
+  .jst-dchips{ display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px; }
+  .jst-chip{ display:inline-flex;align-items:center;gap:6px;padding:6px 13px;
+    border-radius:999px;font-size:13px;font-weight:700;
+    background:#f1f5f9;color:#334155;border:1px solid #e2e8f0; }
+  .jst-chip-range{ background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe; }
+  .jst-chip-prog{ background:#f0fdf4;color:#166534;border-color:#bbf7d0; }
+  .jst-chip-sp1{ background:#f59e0b;color:#fff;border:none; }
+  .jst-chip-sp2{ background:#fb923c;color:#fff;border:none; }
+  .jst-chip-sp3{ background:#ef4444;color:#fff;border:none; }
+  .jst-chip-sp4{ background:#f43f5e;color:#fff;border:none; }
+
+  .jst-dsub{ font-size:15.5px;line-height:1.65;color:#475569;margin:0 0 22px; }
+
+  .jst-sections{ display:flex;flex-direction:column;gap:12px; }
+  .jst-sec{ border-radius:14px;padding:16px 18px;border:1px solid transparent; }
+  .jst-sec-head{ display:flex;align-items:center;gap:10px;margin-bottom:8px; }
+  .jst-sec-ico{ width:32px;height:32px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;flex:0 0 32px; }
+  .jst-sec-lbl{ font-size:11.5px;font-weight:900;letter-spacing:.7px;text-transform:uppercase; }
+  .jst-sec-txt{ font-size:15px;line-height:1.65;color:#334155;margin:0; }
+
+  /* ── Responsive ── */
+  @media(max-width:700px){
+    .jst-layout{ grid-template-columns:1fr;grid-template-rows:auto 1fr; }
+    .jst-timeline{ border-right:none;border-bottom:1px solid #e5e7eb;flex:0 0 auto;overflow:hidden; }
+    .jst-status-mini{ display:none; }
+    .jst-steps{ display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;
+      padding:10px 12px 12px;scrollbar-width:thin; }
+    .jst-steps::before{ display:none; }
+    .jst-step{ flex-direction:column;align-items:center;padding:0 6px;min-width:64px;text-align:center; }
+    .jst-node{ margin-left:0; }
+    .jst-lbl{ padding-left:0;padding-top:5px; }
+    .jst-lbl-name{ font-size:11.5px;white-space:normal; }
+    .jst-lbl-range,.jst-now-badge{ display:none; }
+    .jst-detail{ overflow-y:auto; }
+    .jst-detail-inner{ padding:18px 16px; }
+    .jst-dtitle{ font-size:1.3rem; }
+    .jst-sec{ padding:13px 14px; }
+    .jst-sec-txt{ font-size:14.5px; }
+  }
+  @media(max-width:480px){
+    .jenjang-overlay{ padding:0; }
+    .jenjang-modal{ border-radius:0;max-height:100vh; }
+    .jenjang-head{ border-radius:0; }
   }
 
   /* ==========================================================
@@ -1142,211 +1209,103 @@ $toSafe = $saldo < 0 ? abs($saldo) : 0;
   </div>
 </div>
 
-<!-- ====== NEW: SHEET / MODAL JENJANG PEMBINAAN ====== -->
-
-<style id="jenjangThemeOverrides">
-  /* Theme overrides: dark blue header, soft green accents */
-  .jenjang-head{
-    background:linear-gradient(90deg,#0b3c7c 0%, #1e3a8a 100%) !important;
-    color:#fff !important;
-  }
-  .jenjang-title{ color:#fff !important; }
-  .jenjang-close{ background:#ffffff1f !important; color:#fff !important; }
-  .jenjang-close:hover{ background:#ffffff33 !important; }
-  .jenjang-item{ border-left-width:8px !important; }
-  .jenjang-item .j-title{ color:#0f172a; }
-  .jenjang-item .j-sub{ color:#334155; }
-</style>
-<div id="JenjangSheet" class="jenjang-overlay" data-theme="light" aria-hidden="true" role="dialog" aria-modal="true">
+<!-- ====== STEPPER: JENJANG PEMBINAAN ====== -->
+<div id="JenjangSheet" class="jenjang-overlay" aria-hidden="true" role="dialog" aria-modal="true">
   <div class="jenjang-modal" role="document">
+
     <div class="jenjang-head">
-      <h3 class="jenjang-title"><i class="fa fa-sitemap"></i> Jenjang Pembinaan Peserta Didik</h3>
-      <button class="jenjang-close" type="button" title="Tutup" aria-label="Tutup" data-close-jenjang><i class="fa fa-times"></i></button>
+      <h3 class="jenjang-title"><i class="fa fa-sitemap" aria-hidden="true"></i> Jenjang Pembinaan Peserta Didik</h3>
+      <button class="jenjang-close" type="button" title="Tutup" aria-label="Tutup" data-close-jenjang>
+        <i class="fa fa-times" aria-hidden="true"></i>
+      </button>
     </div>
 
     <div class="jenjang-body">
-      <p class="jenjang-desc">
-        Akumulasi <b>saldo poin (prestasi − pelanggaran)</b> menentukan jenjang pembinaan.
-        Klik setiap kartu untuk melihat rincian program, tindakan, dan tujuan pembinaan.
-      </p>
+      <div class="jst-layout">
 
-      <!-- status singkat -->
-      <div class="mini-card" style="margin-top:0;margin-bottom:14px;">
-        <?php if($negSaldo>0){ ?>
-          <b>Status saat ini:</b> <span class="label label-danger" style="margin-left:6px;"><?php echo h($currentStage['action']); ?></span>
-          <div class="text-muted" style="margin-top:6px;font-size:14.5px;line-height:1.6">
-            Saldo Anda <b><?php echo ($saldo>=0?'+':'').$saldo; ?></b>
-            (defisit <b><?php echo $negSaldo; ?></b> poin) — berada di <b>Tingkat <?php echo h($currentStage['roman']); ?></b>.
+        <!-- ── KIRI: Timeline/Stepper ── -->
+        <div class="jst-timeline">
+          <div class="jst-status-mini">
+            <?php if($negSaldo > 0){ ?>
+              <div class="jst-saldo-text">Saldo: <b><?php echo ($saldo>=0?'+':'').$saldo; ?></b></div>
+              <div class="jst-saldo-sub">Defisit <b><?php echo $negSaldo; ?> poin</b></div>
+            <?php } else { ?>
+              <div class="jst-saldo-text">Saldo: <b style="color:#22c55e">+<?php echo (int)$saldo; ?></b></div>
+              <div class="jst-saldo-sub" style="color:#22c55e"><b>Status: Aman ✓</b></div>
+            <?php } ?>
           </div>
-        <?php } else { ?>
-          <b>Status saat ini:</b> <span class="label label-success" style="margin-left:6px;">Aman</span>
-          <div class="text-muted" style="margin-top:6px;font-size:14.5px;line-height:1.6">
-            Saldo Anda <b>+<?php echo (int)$saldo; ?></b>. Pertahankan perilaku baik! 🎉
-          </div>
-        <?php } ?>
+
+          <ul class="jst-steps" id="jstSteps">
+            <li class="jst-step<?php echo $levelActive===0?' is-current':''; ?>" data-step="0" style="--sc:#22c55e">
+              <div class="jst-node"><i class="fa fa-check" aria-hidden="true"></i></div>
+              <div class="jst-lbl">
+                <span class="jst-lbl-name">Aman</span>
+                <span class="jst-lbl-range">0 poin negatif</span>
+                <?php if($levelActive===0) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+              </div>
+            </li>
+            <li class="jst-step<?php echo $levelActive===1?' is-current':''; ?>" data-step="1" style="--sc:#10b981">
+              <div class="jst-node">I</div>
+              <div class="jst-lbl">
+                <span class="jst-lbl-name">Tingkat I</span>
+                <span class="jst-lbl-range">1–20 poin</span>
+                <?php if($levelActive===1) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+              </div>
+            </li>
+            <li class="jst-step<?php echo $levelActive===2?' is-current':''; ?>" data-step="2" style="--sc:#f59e0b">
+              <div class="jst-node">II</div>
+              <div class="jst-lbl">
+                <span class="jst-lbl-name">Tingkat II</span>
+                <span class="jst-lbl-range">21–40 poin</span>
+                <?php if($levelActive===2) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+              </div>
+            </li>
+            <li class="jst-step<?php echo $levelActive===3?' is-current':''; ?>" data-step="3" style="--sc:#f97316">
+              <div class="jst-node">III</div>
+              <div class="jst-lbl">
+                <span class="jst-lbl-name">Tingkat III</span>
+                <span class="jst-lbl-range">41–60 poin</span>
+                <?php if($levelActive===3) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+              </div>
+            </li>
+            <li class="jst-step<?php echo $levelActive===4?' is-current':''; ?>" data-step="4" style="--sc:#ef4444">
+              <div class="jst-node">IV</div>
+              <div class="jst-lbl">
+                <span class="jst-lbl-name">Tingkat IV</span>
+                <span class="jst-lbl-range">61–80 poin</span>
+                <?php if($levelActive===4) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+              </div>
+            </li>
+            <li class="jst-step<?php echo $levelActive===5?' is-current':''; ?>" data-step="5" style="--sc:#b91c1c">
+              <div class="jst-node">V</div>
+              <div class="jst-lbl">
+                <span class="jst-lbl-name">Tingkat V</span>
+                <span class="jst-lbl-range">81–99 poin</span>
+                <?php if($levelActive===5) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+              </div>
+            </li>
+            <li class="jst-step<?php echo $levelActive===6?' is-current':''; ?>" data-step="6" style="--sc:#7f1d1d">
+              <div class="jst-node">VI</div>
+              <div class="jst-lbl">
+                <span class="jst-lbl-name">Tingkat VI</span>
+                <span class="jst-lbl-range">≥100 poin</span>
+                <?php if($levelActive===6) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ── KANAN: Detail Panel (dirender JS) ── -->
+        <div class="jst-detail">
+          <div id="jstDetailInner" class="jst-detail-inner"></div>
+        </div>
+
       </div>
-
-      <ul class="jenjang-list" id="jenjangList">
-        <!-- Tingkat I -->
-        <li class="jenjang-item <?php echo $levelActive===1?'is-current open':''; ?>" data-level="1">
-          <div class="j-head">
-            <div class="range-pill level-1">1–20</div>
-            <div>
-              <h4 class="j-title">Tingkat I</h4>
-              <div class="j-sub">Teguran ringan & <strong>pembinaan umum</strong>. Fokus kebiasaan baik, disiplin dasar, dan kerja sama (STP2K).</div>
-              <div class="point-tags">
-                <span class="tag"><i class="fa fa-bullseye"></i> Rentang: 1–20 poin negatif</span>
-                <span class="tag"><i class="fa fa-graduation-cap"></i> Program: Pembinaan Umum</span>
-              </div>
-            </div>
-            <div class="j-right">
-              <div class="jenjang-icon"><i class="fa fa-handshake-o"></i></div>
-              <button class="j-toggle" type="button" aria-label="Buka detail"><i class="fa fa-chevron-down"></i></button>
-            </div>
-          </div>
-          <div class="j-more">
-            <ul class="point-list">
-              <li><span class="dot"></span><span><b>Tindakan:</b> Teguran lisan/tertulis sebagai pengingat awal.</span></li>
-              <li><span class="dot"></span><span><b>Tujuan:</b> Edukasi dini & pembiasaan perilaku baik.</span></li>
-              <li><span class="dot"></span><span><b>Catatan:</b> Poin dapat kembali aman dengan mengumpulkan prestasi.</span></li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Tingkat II -->
-        <li class="jenjang-item <?php echo $levelActive===2?'is-current open':''; ?>" data-level="2">
-          <div class="j-head">
-            <div class="range-pill level-2">21–40</div>
-            <div>
-              <h4 class="j-title">Tingkat II <span class="badge-sp">SP1</span></h4>
-              <div class="j-sub">Peringatan <strong>SP1</strong> & pendampingan wali kelas. Evaluasi perilaku dan komitmen perbaikan.</div>
-              <div class="point-tags">
-                <span class="tag"><i class="fa fa-bullseye"></i> Rentang: 21–40 poin negatif</span>
-                <span class="tag"><i class="fa fa-phone"></i> Komunikasi orang tua</span>
-              </div>
-            </div>
-            <div class="j-right">
-              <div class="jenjang-icon"><i class="fa fa-envelope-open"></i></div>
-              <button class="j-toggle" type="button" aria-label="Buka detail"><i class="fa fa-chevron-down"></i></button>
-            </div>
-          </div>
-          <div class="j-more">
-            <ul class="point-list">
-              <li><span class="dot"></span><span><b>Tindakan:</b> SP1 tertulis & pertemuan singkat dengan orang tua.</span></li>
-              <li><span class="dot"></span><span><b>Tujuan:</b> Kolaborasi sekolah–orang tua untuk menghentikan pelanggaran berulang.</span></li>
-              <li><span class="dot"></span><span><b>Catatan:</b> Monitoring perilaku selama periode tertentu.</span></li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Tingkat III -->
-        <li class="jenjang-item <?php echo $levelActive===3?'is-current open':''; ?>" data-level="3">
-          <div class="j-head">
-            <div class="range-pill level-3">41–60</div>
-            <div>
-              <h4 class="j-title">Tingkat III <span class="badge-sp sp2">SP2</span></h4>
-              <div class="j-sub">Peringatan <strong>SP2</strong> & rencana perbaikan terukur bersama guru/BK.</div>
-              <div class="point-tags">
-                <span class="tag"><i class="fa fa-bullseye"></i> Rentang: 41–60 poin negatif</span>
-                <span class="tag"><i class="fa fa-users"></i> Pendampingan intensif</span>
-              </div>
-            </div>
-            <div class="j-right">
-              <div class="jenjang-icon"><i class="fa fa-exclamation-triangle"></i></div>
-              <button class="j-toggle" type="button" aria-label="Buka detail"><i class="fa fa-chevron-down"></i></button>
-            </div>
-          </div>
-          <div class="j-more">
-            <ul class="point-list">
-              <li><span class="dot"></span><span><b>Tindakan:</b> SP2 & rencana perbaikan (action plan) bersama wali kelas/BK.</span></li>
-              <li><span class="dot"></span><span><b>Tujuan:</b> Perubahan perilaku berkelanjutan dengan target yang terukur.</span></li>
-              <li><span class="dot"></span><span><b>Catatan:</b> Evaluasi berkala dan penilaian kemajuan.</span></li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Tingkat IV -->
-        <li class="jenjang-item <?php echo $levelActive===4?'is-current open':''; ?>" data-level="4">
-          <div class="j-head">
-            <div class="range-pill level-4">61–80</div>
-            <div>
-              <h4 class="j-title">Tingkat IV <span class="badge-sp sp3">SP3</span></h4>
-              <div class="j-sub">Pembinaan <strong>khusus terpadu</strong> dengan guru/BK, pemantauan ketat & komunikasi orang tua.</div>
-              <div class="point-tags">
-                <span class="tag"><i class="fa fa-bullseye"></i> Rentang: 61–80 poin negatif</span>
-                <span class="tag"><i class="fa fa-user-plus"></i> Pembinaan khusus</span>
-              </div>
-            </div>
-            <div class="j-right">
-              <div class="jenjang-icon"><i class="fa fa-user-plus"></i></div>
-              <button class="j-toggle" type="button" aria-label="Buka detail"><i class="fa fa-chevron-down"></i></button>
-            </div>
-          </div>
-          <div class="j-more">
-            <ul class="point-list">
-              <li><span class="dot"></span><span><b>Tindakan:</b> SP3 & program pembinaan terstruktur (coaching/konseling intensif).</span></li>
-              <li><span class="dot"></span><span><b>Tujuan:</b> Koreksi menyeluruh dengan pengawasan ketat.</span></li>
-              <li><span class="dot"></span><span><b>Catatan:</b> Pelanggaran lanjutan berisiko naik ke Tingkat V.</span></li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Tingkat V -->
-        <li class="jenjang-item <?php echo $levelActive===5?'is-current open':''; ?>" data-level="5">
-          <div class="j-head">
-            <div class="range-pill level-5">81–99</div>
-            <div>
-              <h4 class="j-title">Tingkat V <span class="badge-sp sp4">SP4</span></h4>
-              <div class="j-sub">Sidang/konferensi pembinaan sekolah & rekomendasi tindakan. <strong>Monitoring harian</strong>.</div>
-              <div class="point-tags">
-                <span class="tag"><i class="fa fa-bullseye"></i> Rentang: 81–99 poin negatif</span>
-                <span class="tag"><i class="fa fa-gavel"></i> Sidang/konferensi kasus</span>
-              </div>
-            </div>
-            <div class="j-right">
-              <div class="jenjang-icon"><i class="fa fa-gavel"></i></div>
-              <button class="j-toggle" type="button" aria-label="Buka detail"><i class="fa fa-chevron-down"></i></button>
-            </div>
-          </div>
-          <div class="j-more">
-            <ul class="point-list">
-              <li><span class="dot"></span><span><b>Tindakan:</b> SP4, konferensi kasus, penetapan sanksi tegas.</span></li>
-              <li><span class="dot"></span><span><b>Tujuan:</b> Keputusan tindak lanjut terakhir sebelum pemulangan.</span></li>
-              <li><span class="dot"></span><span><b>Catatan:</b> Dampak akademik bisa terjadi (mis. tidak naik kelas).</span></li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Tingkat VI -->
-        <li class="jenjang-item <?php echo $levelActive===6?'is-current open':''; ?>" data-level="6">
-          <div class="j-head">
-            <div class="range-pill level-6">100+</div>
-            <div>
-              <h4 class="j-title">Tingkat VI</h4>
-              <div class="j-sub">Tindak lanjut kebijakan sekolah (mis. <strong>SP3/keputusan akhir</strong>) sesuai peraturan.</div>
-              <div class="point-tags">
-                <span class="tag"><i class="fa fa-bullseye"></i> Rentang: ≥100 poin negatif</span>
-                <span class="tag"><i class="fa fa-door-open"></i> Keputusan akhir</span>
-              </div>
-            </div>
-            <div class="j-right">
-              <div class="jenjang-icon"><i class="fa fa-door-open"></i></div>
-              <button class="j-toggle" type="button" aria-label="Buka detail"><i class="fa fa-chevron-down"></i></button>
-            </div>
-          </div>
-          <div class="j-more">
-            <ul class="point-list">
-              <li><span class="dot"></span><span><b>Tindakan:</b> Pemulangan ke orang tua sesuai ketentuan sekolah.</span></li>
-              <li><span class="dot"></span><span><b>Tujuan:</b> Keselamatan, tanggung jawab, dan pembinaan lanjutan di keluarga.</span></li>
-              <li><span class="dot"></span><span><b>Catatan:</b> Semua proses terdokumentasi & melibatkan pihak terkait.</span></li>
-            </ul>
-          </div>
-        </li>
-      </ul>
     </div>
+
   </div>
 </div>
-<!-- ====== /SHEET JENJANG ====== -->
+<!-- ====== /STEPPER JENJANG ====== -->
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -1633,74 +1592,148 @@ document.addEventListener('DOMContentLoaded', function(){
   backTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
   toggleBackTop();
 
-  /* ===== Interaksi Sheet Jenjang (rev + responsif) ===== */
+  /* ===== Stepper Jenjang Pembinaan ===== */
   (function(){
-    var sheet  = document.getElementById('JenjangSheet');
-    var openBtn= document.getElementById('btnJenjang');
-    if(!sheet || !openBtn) return;
+    var sheet   = document.getElementById('JenjangSheet');
+    var openBtn = document.getElementById('btnJenjang');
+    if (!sheet || !openBtn) return;
 
-    function setMaxHeight(box, expand){
-      var more = box.querySelector('.j-more');
-      if(!more) return;
-      if(expand){
-        more.style.maxHeight = more.scrollHeight + 'px';
-        box.classList.add('open');
+    /* Level siswa saat ini, di-inject dari PHP (0=aman, 1-6=Tingkat I-VI) */
+    var ACTIVE = <?php echo (int)$levelActive; ?>;
+
+    /* Data tingkat — nilai sama persis dengan konten accordion sebelumnya */
+    var D = [
+      { label:'Aman', range:'0 poin negatif', sp:null, spCls:'',
+        prog:'Apresiasi / Monitoring', color:'#22c55e',
+        sub:'Saldo poin Anda aman. Tidak ada tindakan pembinaan yang diperlukan saat ini.',
+        tindakan:'Tidak ada tindakan pembinaan. Kondisi ini mencerminkan perilaku baik.',
+        tujuan:'Menjaga saldo poin tetap positif dan terus meningkatkan prestasi.',
+        catatan:'Poin prestasi dapat terus meningkatkan saldo positif Anda.' },
+      { label:'Tingkat I', range:'1–20 poin negatif', sp:'SP1', spCls:'jst-chip-sp1',
+        prog:'Pembinaan Umum', color:'#10b981',
+        sub:'Teguran ringan & <strong>pembinaan umum</strong>. Fokus kebiasaan baik, disiplin dasar, dan kerja sama (STP2K).',
+        tindakan:'Teguran lisan/tertulis sebagai pengingat awal.',
+        tujuan:'Edukasi dini & pembiasaan perilaku baik.',
+        catatan:'Poin dapat kembali aman dengan mengumpulkan prestasi.' },
+      { label:'Tingkat II', range:'21–40 poin negatif', sp:'SP1', spCls:'jst-chip-sp1',
+        prog:'Pembinaan Umum / Panggilan Orang Tua', color:'#f59e0b',
+        sub:'Peringatan <strong>SP1</strong> & pendampingan wali kelas. Evaluasi perilaku dan komitmen perbaikan.',
+        tindakan:'SP1 tertulis & pertemuan singkat dengan orang tua.',
+        tujuan:'Kolaborasi sekolah–orang tua untuk menghentikan pelanggaran berulang.',
+        catatan:'Monitoring perilaku selama periode tertentu.' },
+      { label:'Tingkat III', range:'41–60 poin negatif', sp:'SP2', spCls:'jst-chip-sp2',
+        prog:'Panggilan Orang Tua', color:'#f97316',
+        sub:'Peringatan <strong>SP2</strong> & rencana perbaikan terukur bersama guru/BK.',
+        tindakan:'SP2 & rencana perbaikan (action plan) bersama wali kelas/BK.',
+        tujuan:'Perubahan perilaku berkelanjutan dengan target yang terukur.',
+        catatan:'Evaluasi berkala dan penilaian kemajuan.' },
+      { label:'Tingkat IV', range:'61–80 poin negatif', sp:'SP3', spCls:'jst-chip-sp3',
+        prog:'Pembinaan Khusus', color:'#ef4444',
+        sub:'Pembinaan <strong>khusus terpadu</strong> dengan guru/BK, pemantauan ketat & komunikasi orang tua.',
+        tindakan:'SP3 & program pembinaan terstruktur (coaching/konseling intensif).',
+        tujuan:'Koreksi menyeluruh dengan pengawasan ketat.',
+        catatan:'Pelanggaran lanjutan berisiko naik ke Tingkat V.' },
+      { label:'Tingkat V', range:'81–99 poin negatif', sp:'SP4', spCls:'jst-chip-sp4',
+        prog:'Konferensi Kasus', color:'#b91c1c',
+        sub:'Sidang/konferensi pembinaan sekolah & rekomendasi tindakan. <strong>Monitoring harian</strong>.',
+        tindakan:'SP4, konferensi kasus, penetapan sanksi tegas.',
+        tujuan:'Keputusan tindak lanjut terakhir sebelum pemulangan.',
+        catatan:'Dampak akademik bisa terjadi (mis. tidak naik kelas).' },
+      { label:'Tingkat VI', range:'≥100 poin negatif', sp:'SP4', spCls:'jst-chip-sp4',
+        prog:'Dikembalikan pada Orang Tua', color:'#7f1d1d',
+        sub:'Tindak lanjut kebijakan sekolah (mis. <strong>SP3/keputusan akhir</strong>) sesuai peraturan.',
+        tindakan:'Pemulangan ke orang tua sesuai ketentuan sekolah.',
+        tujuan:'Keselamatan, tanggung jawab, dan pembinaan lanjutan di keluarga.',
+        catatan:'Semua proses terdokumentasi & melibatkan pihak terkait.' }
+    ];
+
+    var inner  = document.getElementById('jstDetailInner');
+    var curSel = -1; /* belum ada yang dipilih saat init */
+
+    function fa(cls){ return '<i class="fa ' + cls + '" aria-hidden="true"></i>'; }
+
+    function mkSec(bg, border, icoBg, icoColor, ico, labelTxt, txt){
+      return '<div class="jst-sec" style="background:' + bg + ';border-color:' + border + '">'
+        + '<div class="jst-sec-head">'
+        + '<div class="jst-sec-ico" style="background:' + icoBg + ';color:' + icoColor + '">' + fa(ico) + '</div>'
+        + '<span class="jst-sec-lbl" style="color:' + icoColor + '">' + labelTxt + '</span>'
+        + '</div>'
+        + '<p class="jst-sec-txt">' + txt + '</p>'
+        + '</div>';
+    }
+
+    function renderDetail(idx, animate){
+      var d = D[idx];
+      if (!d || !inner) return;
+      var spHtml = d.sp
+        ? '<span class="jst-chip ' + d.spCls + '">' + fa('fa-certificate') + ' ' + d.sp + '</span>'
+        : '';
+      var html = '<h4 class="jst-dtitle" style="color:' + d.color + '">' + d.label + '</h4>'
+        + '<div class="jst-dchips">'
+        + '<span class="jst-chip jst-chip-range">' + fa('fa-bullseye') + ' ' + d.range + '</span>'
+        + '<span class="jst-chip jst-chip-prog">' + fa('fa-graduation-cap') + ' ' + d.prog + '</span>'
+        + spHtml
+        + '</div>'
+        + '<p class="jst-dsub">' + d.sub + '</p>'
+        + '<div class="jst-sections">'
+        + mkSec('#eff6ff','#bfdbfe','#dbeafe','#1d4ed8', 'fa-bolt',          'Tindakan', d.tindakan)
+        + mkSec('#f0fdf4','#bbf7d0','#dcfce7','#16a34a', 'fa-list-ul',       'Tujuan',   d.tujuan)
+        + mkSec('#faf5ff','#e9d5ff','#ede9fe','#6d28d9', 'fa-sticky-note-o', 'Catatan',  d.catatan)
+        + '</div>';
+
+      if (animate) {
+        inner.classList.add('fading');
+        setTimeout(function(){
+          inner.innerHTML = html;
+          inner.classList.remove('fading');
+        }, 160);
       } else {
-        more.style.maxHeight = '0px';
-        box.classList.remove('open');
+        inner.innerHTML = html;
       }
     }
 
+    function selectStep(idx){
+      /* event delegation — re-query tiap kali aman karena DOM tidak berubah sesudah open */
+      sheet.querySelectorAll('.jst-step').forEach(function(s){ s.classList.remove('sel'); });
+      var target = sheet.querySelector('.jst-step[data-step="' + idx + '"]');
+      if (target) target.classList.add('sel');
+      renderDetail(idx, curSel !== -1 && curSel !== idx);
+      curSel = idx;
+    }
+
     function openSheet(){
-      /* Pindahkan sheet ke <body> agar position:fixed selalu relatif viewport
-         (kebal dari ancestor ber-transform/filter yang bisa bikin modal "nempel kiri"). */
+      /* Pindah ke <body> agar position:fixed kebal dari ancestor ber-transform */
       if (sheet.parentNode !== document.body) document.body.appendChild(sheet);
       sheet.classList.add('show');
-      document.body.style.overflow='hidden';
+      document.body.style.overflow = 'hidden';
       setTimeout(function(){ sheet.classList.add('reveal'); }, 10);
-
-      var items = sheet.querySelectorAll('.jenjang-item');
-      items.forEach(function(el, i){
-        var opened = el.classList.contains('is-current');
-        setTimeout(function(){
-          setMaxHeight(el, opened);
-        }, 50 + i*50);
-      });
-
-      sheet.querySelectorAll('.j-toggle').forEach(function(btn){
-        btn.addEventListener('click', function(e){
-          var item = this.closest('.jenjang-item');
-          var currentlyOpen = item.classList.contains('open');
-          sheet.querySelectorAll('.jenjang-item.open').forEach(function(it){ setMaxHeight(it, false); });
-          setMaxHeight(item, !currentlyOpen);
-          e.stopPropagation();
-        });
-      });
-
-      sheet.querySelectorAll('.j-head').forEach(function(h){
-        h.addEventListener('click', function(e){
-          if(e.target.closest('.j-toggle')) return;
-          var item = this.closest('.jenjang-item');
-          var currentlyOpen = item.classList.contains('open');
-          sheet.querySelectorAll('.jenjang-item.open').forEach(function(it){ setMaxHeight(it, false); });
-          setMaxHeight(item, !currentlyOpen);
-        });
-      });
+      /* Default: tampilkan level siswa saat ini; render langsung (tanpa animasi) */
+      curSel = -1;
+      selectStep(ACTIVE);
     }
 
     function closeSheet(){
       sheet.classList.remove('reveal');
       setTimeout(function(){
-        sheet.querySelectorAll('.j-more').forEach(function(m){ m.style.maxHeight='0px'; });
         sheet.classList.remove('show');
-        document.body.style.overflow='';
-      }, 180);
+        document.body.style.overflow = '';
+      }, 200);
     }
 
+    /* Satu listener delegasi di sheet — mencakup klik node, close, backdrop.
+       Listener ini melekat pada elemen sheet, bukan di DOM tree posisi asal,
+       sehingga tetap aktif setelah appendChild (elemen bergerak, listener ikut). */
+    sheet.addEventListener('click', function(e){
+      if (e.target === sheet) { closeSheet(); return; }
+      var step = e.target.closest('.jst-step');
+      if (step) { selectStep(parseInt(step.dataset.step, 10) || 0); return; }
+      if (e.target.closest('[data-close-jenjang]')) closeSheet();
+    });
+
     openBtn.addEventListener('click', openSheet);
-    sheet.addEventListener('click', function(e){ if(e.target === sheet) closeSheet(); });
-    sheet.querySelectorAll('[data-close-jenjang]').forEach(function(btn){ btn.addEventListener('click', closeSheet); });
-    document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && sheet.classList.contains('show')) closeSheet(); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && sheet.classList.contains('show')) closeSheet();
+    });
   })();
 
   // ===== [REV-2] Interaksi kartu Fitur Lanjutan =====
