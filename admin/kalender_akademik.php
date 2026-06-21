@@ -140,15 +140,6 @@ if ($fil_tipe!=='') $where .= " AND tipe='".mysqli_real_escape_string($koneksi,$
 $qList = mysqli_query($koneksi,"SELECT id, ta_id, tgl, tipe, keterangan, scope_kelas_id FROM kalender_libur $where ORDER BY tgl ASC, tipe");
 
 // === Ringkasan non-efektif per tipe (hanya weekdays sesuai 5/6 hari, exclude Sabtu/Minggu)
-$sum = [];
-$qSum = mysqli_query($koneksi,"
-  SELECT tipe, COUNT(*) AS cnt FROM (
-    SELECT tgl, tipe FROM view_non_efektif
-    WHERE tgl BETWEEN '".mysqli_real_escape_string($koneksi,$semStart)."' AND '".mysqli_real_escape_string($koneksi,$semEnd)."'
-      AND (ta_id IS NULL OR ta_id=$TA)
-  ) x
-");
-# kita hitung manual agar bisa exclude weekend
 $sum = ['nasional'=>0,'sekolah'=>0,'kegiatan'=>0,'cuti_bersama'=>0,'lain'=>0];
 $qAll = mysqli_query($koneksi,"
   SELECT tgl, tipe
