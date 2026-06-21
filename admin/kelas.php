@@ -521,3 +521,28 @@ if ($resG = mysqli_query($koneksi, $guru_sql)) {
   });
 })();
 </script>
+
+<script>
+/* DataTable reinit — override minimal defaults dari footer.php */
+$(function(){
+  var $tbl = $('#table-datatable');
+  if (!$tbl.length || !$.fn.DataTable) return;
+  if ($.fn.DataTable.isDataTable($tbl)) {
+    try { $tbl.DataTable().destroy(); } catch(e){}
+  }
+  $tbl.DataTable({
+    destroy: true,
+    order: [[1, 'asc']],
+    pageLength: 25,
+    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Semua']],
+    language: {
+      search: 'Cari:',
+      lengthMenu: 'Tampil _MENU_ data',
+      info: 'Menampilkan _START_–_END_ dari _TOTAL_ kelas',
+      infoEmpty: 'Tidak ada data',
+      zeroRecords: 'Tidak ada kelas yang cocok',
+      paginate: { previous: '←', next: '→' }
+    }
+  });
+});
+</script>
