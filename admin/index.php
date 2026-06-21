@@ -407,14 +407,30 @@ if($qa){
   .kpi-green{background:linear-gradient(135deg,#34d399,#059669)}
   .kpi-danger{background:linear-gradient(135deg,#f97316,#dc2626)}
   .kpi-safe{background:linear-gradient(135deg,#34d399,#059669)}
-  .kpi-orange{background:linear-gradient(135deg,#fb923c,#f97316)}
-  .kpi-maroon{background:linear-gradient(135deg,#ef4444,#7f1d1d)}
-  .kpi-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
-  @media(max-width:1199px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.kpi-grid-3{grid-template-columns:repeat(3,1fr)}}
-  @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.kpi-grid-3{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:380px){.kpi-grid{grid-template-columns:1fr}.kpi-grid-3{grid-template-columns:1fr}}
+  @media(max-width:1199px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
   @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:380px){.kpi-grid{grid-template-columns:1fr}}
+
+  /* ===== SP TERBIT STRIP ===== */
+  .sp-strip{display:flex;align-items:stretch;background:#fff;border:1px solid var(--c-border);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px}
+  .sp-strip-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 16px;background:#f8fafc;border-right:1px solid var(--c-border);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--c-muted);white-space:nowrap;flex-shrink:0}
+  .sp-strip-head i{font-size:15px;color:var(--c-primary)}
+  .sp-strip-items{display:flex;flex:1;overflow-x:auto}
+  .sp-strip-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px;border-right:1px solid #f1f5f9;border-top:3px solid transparent;transition:background .15s;text-decoration:none!important;color:inherit!important;min-width:52px}
+  .sp-strip-items>:last-child{border-right:none}
+  .sp-strip-item:hover{background:#f8fafc}
+  a.sp-strip-item:hover{background:#f0f7ff}
+  .sp-strip-num{font-size:clamp(16px,2.6vw,24px);font-weight:900;line-height:1;letter-spacing:-.5px}
+  .sp-strip-lbl{font-size:9px;font-weight:700;color:var(--c-muted);letter-spacing:.04em;text-transform:uppercase;margin-top:3px;white-space:nowrap}
+  .sp-strip-sep{width:1px;background:var(--c-border);align-self:stretch;flex-shrink:0}
+  .sp-strip-item.sc-amber{border-top-color:#d97706}.sc-amber .sp-strip-num{color:#d97706}
+  .sp-strip-item.sc-orange{border-top-color:#f97316}.sc-orange .sp-strip-num{color:#f97316}
+  .sp-strip-item.sc-red{border-top-color:#dc2626}.sc-red .sp-strip-num{color:#dc2626}
+  .sp-strip-item.sc-maroon{border-top-color:#991b1b}.sc-maroon .sp-strip-num{color:#991b1b}
+  .sp-strip-item.sc-blue{border-top-color:#2563eb}.sc-blue .sp-strip-num{color:#2563eb}
+  .sp-strip-item.sc-ew-danger{border-top-color:#dc2626;background:#fff9f9}.sc-ew-danger .sp-strip-num{color:#dc2626}
+  .sp-strip-item.sc-ew-safe{border-top-color:#059669}.sc-ew-safe .sp-strip-num{color:#059669}
+  @media(max-width:640px){.sp-strip-head{display:none}}
 
   /* ===== BOX & TABLE ===== */
   .box-modern{border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.05)}
@@ -811,48 +827,44 @@ if($qa){
     </div>
 
     <!-- REKAPITULASI SP TERBIT -->
-    <div class="zone-header" style="margin-top:6px">
+    <div class="zone-header">
       <div class="zl"></div>
       <span class="zone-label"><i class="fa fa-envelope-o"></i> Rekapitulasi Surat Peringatan Terbit <?php echo $ta_year; ?></span>
       <div class="zl-r"></div>
     </div>
-    <div class="kpi-grid-3">
-      <div class="kpi kpi-amber">
-        <div class="kpi-value" data-count="<?php echo $spTerbit['sp1']; ?>">0</div>
-        <div class="kpi-label">SP1 Terbit</div>
-        <div class="kpi-sub">Teguran &amp; Pembinaan Umum</div>
-        <i class="fa fa-file-text icon-bg"></i>
+    <div class="sp-strip" role="region" aria-label="Rekapitulasi SP Terbit <?php echo (int)$ta_year; ?>">
+      <div class="sp-strip-head">
+        <i class="fa fa-file-text-o"></i>
+        <span>SP Terbit</span>
       </div>
-      <div class="kpi kpi-orange">
-        <div class="kpi-value" data-count="<?php echo $spTerbit['sp2']; ?>">0</div>
-        <div class="kpi-label">SP2 Terbit</div>
-        <div class="kpi-sub">Panggilan Orang Tua</div>
-        <i class="fa fa-file-text-o icon-bg"></i>
-      </div>
-      <div class="kpi kpi-red">
-        <div class="kpi-value" data-count="<?php echo $spTerbit['sp3']; ?>">0</div>
-        <div class="kpi-label">SP3 Terbit</div>
-        <div class="kpi-sub">Pembinaan Khusus</div>
-        <i class="fa fa-file-text-o icon-bg"></i>
-      </div>
-      <div class="kpi kpi-maroon">
-        <div class="kpi-value" data-count="<?php echo $spTerbit['sp4']; ?>">0</div>
-        <div class="kpi-label">SP4 Terbit</div>
-        <div class="kpi-sub">Konferensi Kasus</div>
-        <i class="fa fa-exclamation-triangle icon-bg"></i>
-      </div>
-      <div class="kpi kpi-blue">
-        <div class="kpi-value" data-count="<?php echo $SP_TOTAL_TERBIT; ?>">0</div>
-        <div class="kpi-label">Total SP Terbit</div>
-        <div class="kpi-sub">SP1 + SP2 + SP3 + SP4</div>
-        <i class="fa fa-files-o icon-bg"></i>
-      </div>
-      <?php $ewKpiClass = ($EW_COUNT > 0) ? 'kpi-danger' : 'kpi-safe'; ?>
-      <div class="kpi <?php echo $ewKpiClass; ?>">
-        <div class="kpi-value" data-count="<?php echo $EW_COUNT; ?>">0</div>
-        <div class="kpi-label">Early Warning</div>
-        <div class="kpi-sub">Siswa mendekati ambang SP</div>
-        <i class="fa fa-bell icon-bg"></i>
+      <div class="sp-strip-items">
+        <div class="sp-strip-item sc-amber">
+          <div class="sp-strip-num" data-count="<?php echo $spTerbit['sp1']; ?>">0</div>
+          <div class="sp-strip-lbl">SP 1</div>
+        </div>
+        <div class="sp-strip-item sc-orange">
+          <div class="sp-strip-num" data-count="<?php echo $spTerbit['sp2']; ?>">0</div>
+          <div class="sp-strip-lbl">SP 2</div>
+        </div>
+        <div class="sp-strip-item sc-red">
+          <div class="sp-strip-num" data-count="<?php echo $spTerbit['sp3']; ?>">0</div>
+          <div class="sp-strip-lbl">SP 3</div>
+        </div>
+        <div class="sp-strip-item sc-maroon">
+          <div class="sp-strip-num" data-count="<?php echo $spTerbit['sp4']; ?>">0</div>
+          <div class="sp-strip-lbl">SP 4</div>
+        </div>
+        <div class="sp-strip-sep"></div>
+        <div class="sp-strip-item sc-blue">
+          <div class="sp-strip-num" data-count="<?php echo $SP_TOTAL_TERBIT; ?>">0</div>
+          <div class="sp-strip-lbl">Total</div>
+        </div>
+        <div class="sp-strip-sep"></div>
+        <?php $ewSC = ($EW_COUNT > 0) ? 'sc-ew-danger' : 'sc-ew-safe'; ?>
+        <a href="#zone-sp" class="sp-strip-item <?php echo $ewSC; ?>">
+          <div class="sp-strip-num" data-count="<?php echo $EW_COUNT; ?>">0</div>
+          <div class="sp-strip-lbl"><i class="fa fa-bolt" style="font-size:7px"></i> EW</div>
+        </a>
       </div>
     </div>
 
@@ -1370,7 +1382,7 @@ if($qa){
     requestAnimationFrame(step);
   }
   document.addEventListener('DOMContentLoaded', function(){
-    document.querySelectorAll('.kpi .kpi-value').forEach(function(el){
+    document.querySelectorAll('.kpi .kpi-value, .sp-strip-num[data-count]').forEach(function(el){
       animateCounter(el, el.getAttribute('data-count'), 900);
     });
 
