@@ -373,6 +373,13 @@ require_once __DIR__ . '/../includes/theme_brand.php';
           </a>
         </li>
 
+        <li class="<?php echo ($CURRENT=='pengumuman.php')?'active':''; ?>">
+          <a href="pengumuman.php" title="Pengumuman">
+            <span class="menu-ic"><i class="fas fa-bullhorn"></i></span>
+            <span class="menu-text">Pengumuman</span>
+          </a>
+        </li>
+
         <li class="<?php echo ($CURRENT=='absensi.php')?'active':''; ?>">
           <a href="absensi.php" title="Absensi Saya">
             <span class="menu-ic"><i class="fas fa-calendar-check"></i></span>
@@ -420,7 +427,7 @@ require_once __DIR__ . '/../includes/theme_brand.php';
         <li class="header">Riwayat</li>
         <li class="<?php echo ($CURRENT=='prestasi_saya.php')?'active':''; ?>">
           <a href="prestasi_saya.php" title="Prestasi Saya">
-            <span class="menu-ic"><i class="fas a fa-trophy"></i></span>
+            <span class="menu-ic"><i class="fas fa-trophy"></i></span>
             <span class="menu-text">Prestasi Saya</span>
           </a>
         </li>
@@ -433,9 +440,9 @@ require_once __DIR__ . '/../includes/theme_brand.php';
 
         <li class="header">Penilaian</li>
         <li class="<?php echo (in_array($CURRENT,['ujian.php','ujian_kelas.php']))?'active':''; ?>">
-          <a href="ujian.php" title="Penilaian Sumatif (Ujian Online)">
-            <span class="menu-ic"><i class="fas fa-clipboard-check"></i></span>
-            <span class="menu-text">Ujian Online</span>
+          <a href="ujian.php" title="Ujian berbasis Google Form (harian / opsional)">
+            <span class="menu-ic"><i class="fas fa-clipboard-list"></i></span>
+            <span class="menu-text">Ujian GForm</span>
           </a>
         </li>
         <li class="<?php echo in_array($CURRENT, ['tugas_saya.php', 'tugas_detail.php'], true) ? 'active' : ''; ?>">
@@ -444,18 +451,18 @@ require_once __DIR__ . '/../includes/theme_brand.php';
             <span class="menu-text">Tugas Saya</span>
           </a>
         </li>
-        <li class="">
-          <a href="https://cbt.smpn1gunungtanjung.sch.id/" title="CBT NESAGUN">
-            <span class="menu-ic"><i class="fas fa-clipboard-check"></i></span>
+        <li class="<?php echo ($CURRENT=='cbt.php')?'active':''; ?>">
+          <a href="cbt.php" title="CBT NESAGUN">
+            <span class="menu-ic"><i class="fas fa-laptop-code"></i></span>
             <span class="menu-text">CBT NESAGUN</span>
           </a>
         </li>
 
         <li class="header">Akun</li>
-        <li class="<?php echo ($CURRENT=='gantipassword.php')?'active':''; ?>">
-          <a href="gantipassword.php" title="Ganti Password">
-            <span class="menu-ic"><i class="fas fa-user-shield"></i></span>
-            <span class="menu-text">Ganti Password</span>
+        <li class="<?php echo ($CURRENT=='profil.php')?'active':''; ?>">
+          <a href="profil.php" title="Profil & Keamanan">
+            <span class="menu-ic"><i class="fas fa-id-card"></i></span>
+            <span class="menu-text">Profil Saya</span>
           </a>
         </li>
 
