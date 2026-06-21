@@ -102,6 +102,17 @@ $pelanggaran = mysqli_query($koneksi,"SELECT ig.waktu tgl, pl.pelanggaran_nama n
   }
 </style>
 
+<!-- ===== Toolbar ===== -->
+<div class="row fadein" style="margin-bottom:6px">
+  <div class="col-md-12 text-right">
+    <a href="rapor_poin_ringkas.php" target="_blank" rel="noopener"
+       class="btn btn-primary"
+       style="border-radius:999px;font-weight:700;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:0;box-shadow:0 8px 18px rgba(37,99,235,.25)">
+      <i class="fa fa-print"></i> Cetak Rapor Poin
+    </a>
+  </div>
+</div>
+
 <!-- ===== KPI ===== -->
 <div class="row fadein">
   <section class="col-md-12">
