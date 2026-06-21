@@ -11,6 +11,8 @@ if (!function_exists('__col_exists')) {
 
 // ====== AJAX endpoint: penerbitan SP (Stage 1B — staff guard, CSRF, prepared) ======
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'issue_sp') {
+  require_once __DIR__ . '/../includes/epoin_security.php';
+  epoin_staff_only_guard_json(); // tolak siswa sebelum penerbitan SP
   require_once __DIR__ . '/../includes/epoin_sp_helpers.php';
   epoin_sp_ajax_issue_endpoint();
 }
@@ -19,6 +21,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'issue_sp') {
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'save_hp_ortu') {
   require_once __DIR__ . '/../includes/epoin_security.php';
   require_once __DIR__ . '/../koneksi.php';
+  epoin_staff_only_guard_json(); // tolak siswa
   header('Content-Type: application/json');
   if (!epoin_csrf_validate()) {
     echo json_encode(['ok'=>false,'msg'=>'CSRF tidak valid.']);
@@ -41,6 +44,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'save_hp_ortu') {
   }
   exit;
 }
+
+// ===== GUARD HALAMAN: hanya STAF (admin + guru/wali/BK), tolak siswa =====
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_only_guard();
 ?>
 
 <?php include 'header.php'; ?>

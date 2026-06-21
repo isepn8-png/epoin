@@ -105,6 +105,94 @@ function epoin_is_admin_session(): bool
 }
 
 /**
+ * Apakah sesi saat ini milik STAF (admin/guru/wali kelas/BK/TU/sekretaris/piket)?
+ * SISWA (portal siswa men-set level='siswa') DITOLAK.
+ *
+ * Prinsip: hanya siswa yang merupakan non-staf di sistem ini; semua akun di
+ * tabel `user` (admin/guru/dll) adalah staf. Jadi: lolos jika admin, ATAU
+ * punya role/level staf yang bukan 'siswa'; ditolak jika level/role = 'siswa'.
+ */
+function epoin_is_staff_session(): bool
+{
+    epoin_ensure_session();
+
+    // Admin/superadmin selalu staf
+    if (epoin_is_admin_session()) {
+        return true;
+    }
+
+    $norm = static function ($v): string {
+        return strtolower(str_replace([' ', '-', '_'], '', (string) $v));
+    };
+
+    // Siswa ditolak secara eksplisit
+    if ($norm($_SESSION['level'] ?? '') === 'siswa') {
+        return false;
+    }
+    $roles = $_SESSION['roles'] ?? [];
+    if (is_array($roles)) {
+        foreach ($roles as $r) {
+            if ($norm($r) === 'siswa') {
+                return false;
+            }
+        }
+        foreach ($roles as $r) {
+            if ($norm($r) !== '') {
+                return true; // ada role staf yang valid
+            }
+        }
+    }
+
+    // Fallback: login dengan level non-kosong & bukan siswa → staf
+    return $norm($_SESSION['level'] ?? '') !== '';
+}
+
+/**
+ * Guard halaman HTML: izinkan STAF (admin + guru/wali/BK/dll), tolak siswa & tamu.
+ * Tamu → login admin; siswa → portal siswa.
+ * Panggil SEBELUM ada output (sebelum include header.php).
+ * @return int user id
+ */
+function epoin_staff_only_guard(string $studentRedirect = '../siswa/'): int
+{
+    epoin_ensure_session();
+    $uid = (int) ($_SESSION['id'] ?? $_SESSION['user_id'] ?? 0);
+    if ($uid <= 0) {
+        header('Location: ../admin.php?alert=belum_login');
+        exit;
+    }
+    if (!epoin_is_staff_session()) {
+        epoin_flash_error('Akses ditolak: halaman ini khusus staf (admin/guru).');
+        header('Location: ' . $studentRedirect);
+        exit;
+    }
+    return $uid;
+}
+
+/**
+ * Guard endpoint JSON: izinkan STAF, tolak siswa & tamu (tanpa redirect HTML).
+ * @return int user id
+ */
+function epoin_staff_only_guard_json(): int
+{
+    epoin_ensure_session();
+    $uid = (int) ($_SESSION['id'] ?? $_SESSION['user_id'] ?? 0);
+    if ($uid <= 0) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'error' => 'Belum login'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if (!epoin_is_staff_session()) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'error' => 'Akses ditolak: khusus staf'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    return $uid;
+}
+
+/**
  * @return int user id or 0
  */
 function epoin_staff_guard(bool $requireAdmin = false): int

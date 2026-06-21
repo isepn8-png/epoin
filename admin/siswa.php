@@ -1,4 +1,9 @@
-<?php include 'header.php'; ?>
+<?php
+// ===== GUARD: hanya STAF (admin + guru/wali/BK), tolak siswa =====
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_only_guard();
+include 'header.php';
+?>
 
 
 
