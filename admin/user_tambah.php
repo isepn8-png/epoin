@@ -171,6 +171,7 @@ $DEFAULT_AVATAR = '../gambar/sistem/user.png';
 
           <div class="box-body">
             <form action="user_act.php" method="post" enctype="multipart/form-data" id="formAddUser" autocomplete="off">
+              <?php echo epoin_csrf_field(); ?>
               <!-- redirect tujuan daftar manajemen -->
               <input type="hidden" name="redirect_to" value="manajemen_pengguna.php">
               <!-- level legacy untuk kompatibilitas backend lama -->

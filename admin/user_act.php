@@ -1,6 +1,11 @@
 <?php
-include '../koneksi.php';
 session_start();
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_guard(true);
+if (!epoin_csrf_validate()) {
+    epoin_csrf_fail_redirect('user_tambah.php');
+}
+include '../koneksi.php';
 
 // ----------------------------------------------------
 // Konfigurasi umum
