@@ -10,6 +10,16 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // ========================
+// Auth + CSRF (wajib)
+// ========================
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_guard(true);
+if (!epoin_csrf_validate()) {
+  http_response_code(403);
+  die('Token CSRF tidak valid. Silakan muat ulang halaman dan coba lagi.');
+}
+
+// ========================
 // Konfigurasi dasar
 // ========================
 $MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -34,16 +44,6 @@ if (!$autoloadFound) {
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as XlsDate;
-
-// ========================
-// Opsional: Cek CSRF (jika kamu menambahkan hidden input di form)
-// Jika token tidak ada, lanjut saja agar kompatibel dengan form lama.
-// ========================
-$csrfEnabled = isset($_POST['csrf_token']) && isset($_SESSION['csrf_token']);
-if ($csrfEnabled && !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-  http_response_code(400);
-  die('Token CSRF tidak valid. Silakan muat ulang halaman dan coba lagi.');
-}
 
 // ========================
 // Koneksi DB (mysqli)

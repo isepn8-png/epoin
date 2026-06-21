@@ -213,7 +213,7 @@ if (!isset($koneksi) || !$koneksi) {
             </div>
 
             <form id="importForm" action="siswa_import_act.php" method="post" enctype="multipart/form-data" novalidate>
-              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
+              <?php echo epoin_csrf_field(); ?>
 
               <div class="form-group" style="margin-bottom:16px;">
                 <label for="berkas">
