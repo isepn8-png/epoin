@@ -198,6 +198,7 @@ foreach($mapelByJenis as $jk=>$mm){ if (is_array($mm)) { natcasesort($mm); $mape
 if(!$jenisList){ $jenisList=array(); $mapelByJenis=new stdClass(); $rowsByJenis=new stdClass(); }
 
 /* ==== Layout ==== */
+$PAGE_TITLE = 'Ujian GForm';
 $header = __DIR__.'/header.php';
 if (is_file($header)) require_once $header; else echo "<div class='content-wrapper'><section class='content'><div class='alert alert-warning'>header.php tidak ditemukan.</div></section></div>";
 ?>
@@ -205,28 +206,63 @@ if (is_file($header)) require_once $header; else echo "<div class='content-wrapp
 <!-- =================== KONTEN =================== -->
 <div class="content-wrapper">
   <section class="content-header">
-    <h1>Ujian Online <small>Penilaian Sumatif • Panel Siswa</small></h1>
+    <h1>Ujian GForm <small>Ujian berbasis Google Form</small></h1>
     <ol class="breadcrumb">
       <li><a href="index.php"><i class="fa fa-home"></i> Beranda</a></li>
-      <li class="active">Ujian Online</li>
+      <li class="active">Ujian GForm</li>
     </ol>
   </section>
 
   <section class="content">
-    <!-- Info kelas terdeteksi -->
-    <div class="box">
-      <div class="box-body">
-        <div class="row" style="align-items:center">
-          <div class="col-sm-8">
-            <p style="margin:0 0 6px"><strong>Hai! Kami mendeteksi Anda di</strong>
-              <?php if (trim((string)$kelasLabel) !== ''): ?>
-                <span class="label label-default" style="margin-left:4px">Kelas <?= e($kelasLabel) ?></span>
-              <?php endif; ?>
-            </p>
-            <p class="note-mini" style="margin:2px 0 0;color:#6b7280">
-              Ujian yang muncul sudah diset khusus buat kelasmu.
-            </p>
-          </div>
+    <!-- Penjelasan Ujian GForm -->
+    <style>
+      .ug-intro{background:#fff;border:1px solid #eef0f4;border-radius:16px;overflow:hidden;box-shadow:0 8px 22px rgba(15,23,42,.05);margin-bottom:16px}
+      .ug-intro-hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 20px;color:#fff;background:linear-gradient(135deg,#7c3aed,#6366f1)}
+      .ug-intro-ic{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+      .ug-intro-hd h3{margin:0 0 2px;font-weight:800;font-size:19px}
+      .ug-intro-hd p{margin:0;opacity:.95;font-size:13px}
+      .ug-kelas{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:7px 14px;border-radius:999px;font-weight:700;font-size:13px}
+      .ug-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+      .ug-col{padding:16px 20px;border-right:1px solid #f1f5f9}
+      .ug-col:last-child{border-right:0}
+      .ug-col-t{font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+      .ug-col-t.ug-green{color:#059669}.ug-col-t.ug-blue{color:#2563eb}.ug-col-t.ug-amber{color:#d97706}
+      .ug-col ul{margin:0;padding-left:18px;color:#475569;font-size:13px;line-height:1.7}
+      .ug-col a{color:#2563eb;font-weight:700}
+      @media(max-width:768px){.ug-grid{grid-template-columns:1fr}.ug-col{border-right:0;border-bottom:1px solid #f1f5f9}.ug-col:last-child{border-bottom:0}.ug-kelas{margin-left:0}}
+    </style>
+    <div class="ug-intro">
+      <div class="ug-intro-hd">
+        <div class="ug-intro-ic"><i class="fas fa-clipboard-list"></i></div>
+        <div>
+          <h3>Ujian GForm</h3>
+          <p>Ujian berbasis <b>Google Form</b> yang dibuka dalam mode <b>layar penuh terkunci</b> dengan pemantauan kejujuran.</p>
+        </div>
+        <?php if (trim((string)$kelasLabel) !== ''): ?>
+          <span class="ug-kelas"><i class="fas fa-users"></i> Kelas <?= e($kelasLabel) ?></span>
+        <?php endif; ?>
+      </div>
+      <div class="ug-grid">
+        <div class="ug-col">
+          <div class="ug-col-t ug-green"><i class="fas fa-circle-check"></i> Kapan dipakai?</div>
+          <ul>
+            <li>Ulangan harian atau kuis singkat.</li>
+            <li>Saat guru memilih Google Form sebagai media ujian (opsional).</li>
+          </ul>
+        </div>
+        <div class="ug-col">
+          <div class="ug-col-t ug-blue"><i class="fas fa-laptop-code"></i> Ujian besar?</div>
+          <ul>
+            <li>PTS, SAS/SAT, ujian semester &amp; akhir umumnya memakai <b>CBT NESAGUN</b>.</li>
+            <li><a href="cbt.php">Buka menu CBT NESAGUN &rarr;</a></li>
+          </ul>
+        </div>
+        <div class="ug-col">
+          <div class="ug-col-t ug-amber"><i class="fas fa-triangle-exclamation"></i> Aturan penting</div>
+          <ul>
+            <li>Wajib <b>layar penuh</b>; timer berjalan sesuai durasi.</li>
+            <li>Pindah tab/aplikasi tercatat — <b>3× = diskualifikasi</b>.</li>
+          </ul>
         </div>
       </div>
     </div>
