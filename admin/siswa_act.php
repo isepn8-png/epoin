@@ -8,6 +8,9 @@ $nis      = trim($_POST['nis'] ?? '');
 $jurusan  = trim($_POST['jurusan'] ?? '');
 $password = md5((string)($_POST['password'] ?? '')); // mengikuti pola MD5 di DB seed
 $status   = trim($_POST['status'] ?? 'aktif');
+$hpOrtu   = preg_replace('/\D+/', '', trim($_POST['hp_ortu'] ?? ''));
+if ($hpOrtu !== '' && strlen($hpOrtu) < 10) { $hpOrtu = ''; }
+$hpOrtuVal = $hpOrtu !== '' ? $hpOrtu : null;
 
 // Validasi sederhana
 if ($nama === '' || $nis === '' || $jurusan === '' || $password === '') {
@@ -35,15 +38,15 @@ if (!empty($_FILES['foto']['name'])) {
 }
 
 // Insert ke tabel siswa
-$sql = "INSERT INTO siswa 
-        (siswa_nama, siswa_nis, siswa_jurusan, siswa_status, siswa_password, siswa_foto, last_login, status_login)
-        VALUES (?, ?, ?, ?, ?, ?, NULL, 'offline')";
+$sql = "INSERT INTO siswa
+        (siswa_nama, siswa_nis, siswa_jurusan, siswa_status, siswa_password, siswa_foto, hp_ortu, last_login, status_login)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'offline')";
 
 $stmt = mysqli_prepare($koneksi, $sql);
 if ($stmt === false) { die('DB Error (prepare).'); }
 
-mysqli_stmt_bind_param($stmt, "ssssss",
-  $nama, $nis, $jurusan, $status, $password, $fotoFile
+mysqli_stmt_bind_param($stmt, "sssssss",
+  $nama, $nis, $jurusan, $status, $password, $fotoFile, $hpOrtuVal
 );
 
 mysqli_stmt_execute($stmt);

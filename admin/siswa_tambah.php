@@ -150,6 +150,19 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
                 <small class="help-inline">Klik salah satu jurusan / tingkat kelas.</small>
               </div>
 
+              <!-- HP ORTU (OPSIONAL) -->
+              <div class="form-group">
+                <label>No. HP / WA Orang Tua <small class="text-muted" style="font-weight:400">(opsional)</small></label>
+                <div class="input-group">
+                  <span class="input-group-addon"><i class="fa fa-whatsapp" style="color:#25d366"></i></span>
+                  <input type="text" class="form-control" name="hp_ortu" id="hp_ortu_tambah"
+                         placeholder="Contoh: 081234567890 atau 6281234567890"
+                         inputmode="tel" maxlength="20" autocomplete="tel">
+                </div>
+                <small class="help-inline">Format 08xx (min 10 digit) atau 628xx. Bisa diisi nanti.</small>
+                <div id="hpOrtuErr" style="color:#ff4757;font-size:12px;margin-top:4px;display:none"></div>
+              </div>
+
               <!-- PASSWORD -->
               <div class="form-group">
                 <label>Password <span class="req">wajib</span></label>
@@ -316,6 +329,16 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
   $('[name="nis"]').on('input', function(){ this.value = this.value.replace(/\D+/g,''); });
   $('[name="nama"]').on('blur',  function(){ this.value = this.value.replace(/\s+/g,' ').trim(); });
 
+  // HP Ortu: inline validation (jika diisi wajib min 10 digit)
+  $('#hp_ortu_tambah').on('input blur', function(){
+    var digits = (this.value||'').replace(/\D/g,'');
+    var errEl = document.getElementById('hpOrtuErr');
+    if(!errEl) return;
+    var invalid = digits !== '' && digits.length < 10;
+    errEl.textContent = invalid ? 'Nomor HP minimal 10 digit.' : '';
+    errEl.style.display = invalid ? 'block' : 'none';
+  });
+
   // Password show/hide
   $('#btn-toggle-pw').on('click', function(){
     const inp = $('#password')[0];
@@ -397,6 +420,10 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
     if(!form.checkValidity()){ form.reportValidity(); return; }
     if(!validateConfirm()){
       Swal.fire({icon:'error', title:'Konfirmasi password belum cocok', text:'Mohon samakan password Anda.'}); return;
+    }
+    const hpTambahDigits = (document.getElementById('hp_ortu_tambah')?.value||'').replace(/\D/g,'');
+    if(hpTambahDigits !== '' && hpTambahDigits.length < 10){
+      Swal.fire({icon:'warning', title:'Nomor HP tidak valid', text:'Minimal 10 digit, atau kosongkan jika belum ada.'}); return;
     }
     const f=fotoInput.files[0]; if(f && !validateImage(f)){
       Swal.fire({icon:'error', title:'Foto tidak valid', text:'Gunakan JPG/PNG/GIF, ukuran maksimal 2 MB.'}); return;

@@ -336,6 +336,7 @@ function status_class($s){
                         <small class="text-muted">
                           Format 08xx (min 10 digit) atau 628xx. Digunakan untuk notifikasi WhatsApp ke orang tua.
                         </small>
+                        <div id="hpOrtuErr" style="color:#dc2626;font-size:12px;margin-top:4px;display:none"></div>
                       </div>
                     </div>
 
@@ -619,5 +620,20 @@ document.querySelectorAll('.track-change, #select-jurusan').forEach(el=>{
       form.submit();
     }
   }, true);
+})();
+
+// ====== Validasi HP Ortu: jika diisi wajib min 10 digit ======
+(function(){
+  var hpField = document.getElementById('hp_ortu');
+  var hpErr   = document.getElementById('hpOrtuErr');
+  if (!hpField) return;
+  function validateHp(){
+    var digits = (hpField.value || '').replace(/\D/g, '');
+    var msg = (digits !== '' && digits.length < 10) ? 'Nomor HP minimal 10 digit.' : '';
+    hpField.setCustomValidity(msg);
+    if (hpErr) { hpErr.textContent = msg; hpErr.style.display = msg ? 'block' : 'none'; }
+  }
+  hpField.addEventListener('input', validateHp);
+  hpField.addEventListener('blur',  validateHp);
 })();
 </script>
