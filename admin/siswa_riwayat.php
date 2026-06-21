@@ -20,8 +20,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'save_hp_ortu') {
   require_once __DIR__ . '/../includes/epoin_security.php';
   require_once __DIR__ . '/../koneksi.php';
   header('Content-Type: application/json');
-  $token = $_POST['_csrf'] ?? '';
-  if (!epoin_csrf_validate($token)) {
+  if (!epoin_csrf_validate()) {
     echo json_encode(['ok'=>false,'msg'=>'CSRF tidak valid.']);
     exit;
   }

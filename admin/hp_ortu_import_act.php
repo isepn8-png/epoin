@@ -10,8 +10,7 @@ require_once __DIR__ . '/../includes/epoin_security.php';
 epoin_staff_guard(false);
 
 // CSRF
-$token = $_POST['_csrf'] ?? '';
-if (!epoin_csrf_validate($token)) {
+if (!epoin_csrf_validate()) {
   http_response_code(400);
   die('Token CSRF tidak valid. Silakan kembali dan coba lagi.');
 }
