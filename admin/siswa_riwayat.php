@@ -77,6 +77,19 @@ if ($negSaldo > 0){
   }
 }
 
+// ===== Pesan WA Orang Tua =====
+$hpOrtu = ''; // kolom hp_ortu belum ada di tabel siswa
+$spStatusWa = $currentStage['sp'] ? "\xF0\x9F\x94\xB4 Status Pembinaan: ".$currentStage['sp'] : "\xE2\x9C\x85 Status Pembinaan: Aman";
+$waMsg = "Yth. Orang Tua/Wali ".$k['siswa_nama']." (".$k['jurusan_nama'].")\n"
+       . "Kami informasikan perkembangan poin disiplin putra-putri Anda:\n\n"
+       . "\xF0\x9F\x93\x8A Saldo Poin: ".$saldo."\n"
+       . "\xE2\x9C\x85 Total Prestasi: ".$totPrestasi." kasus\n"
+       . "\xE2\x9A\xA0 Total Pelanggaran: ".$totPelang." kasus\n"
+       . $spStatusWa."\n\n"
+       . "\xe2\x80\x93 Tim BK SMPN 1 Gunungtanjung";
+$waUrl  = "https://wa.me/".($hpOrtu ? preg_replace('/\D/','',$hpOrtu) : '')."?text=".rawurlencode($waMsg);
+$waDisabled = empty($hpOrtu);
+
 // ===== LOG SP: cek apakah SP sudah diterbitkan (tahun berjalan) =====
 mysqli_query($koneksi, "CREATE TABLE IF NOT EXISTS `sp_log` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -322,9 +335,25 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
     <div class="box box-primary">
       <div class="box-header" style="display:flex;align-items:center;gap:8px;">
         <h3 class="box-title" style="margin:0;">Tentang Siswa</h3>
-        <a href="siswa.php" class="btn btn-default btn-sm" style="margin-left:auto;">
-          <i class="fa fa-arrow-left"></i> Kembali
-        </a>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <?php if($waDisabled): ?>
+            <span class="btn btn-success btn-sm disabled"
+                  style="cursor:not-allowed;opacity:.6;"
+                  data-toggle="tooltip" data-placement="bottom"
+                  title="Nomor WA orang tua belum tersedia"
+                  aria-disabled="true">
+              <i class="fa fa-whatsapp"></i> Hubungi Ortu
+            </span>
+          <?php else: ?>
+            <a href="<?php echo epoin_h($waUrl); ?>" target="_blank" rel="noopener"
+               class="btn btn-success btn-sm">
+              <i class="fa fa-whatsapp"></i> Hubungi Ortu
+            </a>
+          <?php endif; ?>
+          <a href="siswa.php" class="btn btn-default btn-sm">
+            <i class="fa fa-arrow-left"></i> Kembali
+          </a>
+        </div>
       </div>
 
           <div class="box-body">
