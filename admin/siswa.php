@@ -83,6 +83,29 @@ $data = mysqli_query($koneksi, "
   LEFT JOIN kelas k ON k.kelas_id = ks.ks_kelas AND k.kelas_ta = ".(int)$ACTIVE_TA_ID."
   ORDER BY s.siswa_nama ASC
 ");
+
+/* ====== [R4] Status SP per siswa — 1 QUERY AGREGAT (anti N+1) ======
+   Ambil tingkat SP TERTINGGI yang sudah diterbitkan pada tahun berjalan
+   dari sp_log, petakan per siswa_id. Tidak ada query per-baris. */
+$spRankMap = [];
+if (function_exists('table_exists') && table_exists($koneksi, 'sp_log')) {
+  $__yr = (int)date('Y');
+  $qSp = mysqli_query($koneksi, "
+    SELECT siswa_id,
+           MAX(CASE sp_level
+                 WHEN 'SP4' THEN 4 WHEN 'SP3' THEN 3
+                 WHEN 'SP2' THEN 2 WHEN 'SP1' THEN 1 ELSE 0 END) AS sp_rank
+    FROM sp_log
+    WHERE YEAR(tanggal) = $__yr
+    GROUP BY siswa_id
+  ");
+  if ($qSp) {
+    while ($r = mysqli_fetch_assoc($qSp)) {
+      $rank = (int)$r['sp_rank'];
+      if ($rank > 0) $spRankMap[(int)$r['siswa_id']] = $rank;
+    }
+  }
+}
 ?>
 
 <style>
@@ -250,6 +273,15 @@ $data = mysqli_query($koneksi, "
   .saldo-pos { background:#dcfce7; color:#065f46; }
   .saldo-neg { background:#fee2e2; color:#991b1b; }
   .saldo-zero{ background:#e2e8f0; color:#334155; }
+
+  /* ====== [R4] Badge Status SP (disiplin) ====== */
+  .sp-badge{ display:inline-block; border-radius:999px; padding:.25em .7em; font-weight:800; font-size:12px; border:1px solid transparent; white-space:nowrap; }
+  .sp-aman{ background:#dcfce7; color:#065f46; border-color:#bbf7d0; }
+  .sp-ew{ background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe; }
+  .sp-sp1{ background:#fef9c3; color:#854d0e; border-color:#fde68a; }
+  .sp-sp2{ background:#ffedd5; color:#c2410c; border-color:#fed7aa; }
+  .sp-sp3{ background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+  .sp-sp4{ background:#7f1d1d; color:#fff;    border-color:#7f1d1d; }
 
   .icon-svg { width:14px; height:14px; vertical-align:-2px; }
 
@@ -453,6 +485,18 @@ $data = mysqli_query($koneksi, "
                     <option value="aktif">Aktif</option>
                     <option value="nonaktif">Nonaktif</option>
                   </select>
+
+                  <!-- [R4] Filter Status SP (disiplin) -->
+                  <select id="filter-sp" class="form-control input-sm" style="min-width:175px;">
+                    <option value="">Semua Status SP</option>
+                    <option value="Aman">Aman</option>
+                    <option value="EW">&#9888; Early Warning</option>
+                    <option value="SP1">SP1</option>
+                    <option value="SP2">SP2</option>
+                    <option value="SP3">SP3</option>
+                    <option value="SP4">SP4</option>
+                    <option value="KRITIS">Kritis (SP3&ndash;SP4)</option>
+                  </select>
                 </div>
                 <button id="btn-reset" class="btn btn-default btn-sm" data-toggle="tooltip" title="Reset filter">
                   <i class="fa fa-refresh"></i> Reset
@@ -486,6 +530,7 @@ $data = mysqli_query($koneksi, "
                     <!-- [BARU] Kolom KELAS -->
                     <th class="col-kelas">KELAS</th>
                     <th>SALDO POIN</th>
+                    <th>STATUS SP</th>
                     <th>STATUS</th>
                     <th class="col-opsi">OPSI</th>
                   </tr>
@@ -499,6 +544,12 @@ $data = mysqli_query($koneksi, "
                       $kelasNama  = trim($d['kelas_nama'] ?? '');
                       $kelasId    = (int)($d['kelas_id'] ?? 0);
                       $badgeIdx   = $kelasId > 0 ? (($kelasId % 12) ?: 12) : 0; // 1..12 or 0
+                      // [R4] Status SP (disiplin): SP terbit > saldo
+                      $sid    = (int)$d['siswa_id'];
+                      $spRank = $spRankMap[$sid] ?? 0;
+                      if ($spRank > 0)     { $spKey='SP'.$spRank; $spLabel='SP'.$spRank; }
+                      elseif ($saldo >= 0) { $spKey='AMAN';       $spLabel='Aman'; }
+                      else                 { $spKey='EW';         $spLabel='EW'; }
                     ?>
                     <tr>
                       <td><?php echo $no++; ?></td>
@@ -528,6 +579,14 @@ $data = mysqli_query($koneksi, "
                       </td>
 
                       <td class="text-center"><span class="saldo-badge <?php echo $saldoClass; ?>"><?php echo $saldoText; ?></span></td>
+
+                      <!-- [R4] Sel STATUS SP -->
+                      <td class="text-center">
+                        <span class="sp-badge sp-<?php echo strtolower($spKey); ?>" title="Status pembinaan/disiplin">
+                          <?php if($spKey==='EW'): ?><i class="fa fa-exclamation-triangle"></i> <?php elseif($spKey!=='AMAN'): ?><i class="fa fa-file-text-o"></i> <?php endif; ?><?php echo e($spLabel); ?>
+                        </span>
+                      </td>
+
                       <td><span class="label rounded <?php echo status_badge_class($d['siswa_status']); ?>"><?php echo e($d['siswa_status']); ?></span></td>
                       <td class="col-opsi">
                         <!-- REVISI: tombol menyatu jadi pill & selalu 1 baris -->
@@ -605,8 +664,8 @@ $data = mysqli_query($koneksi, "
       try { $tbl.DataTable().clear().destroy(); } catch(e){}
     }
 
-    /* [BARU] Indeks kolom berubah:
-       0:#, 1:Nama, 2:NIS, 3:Jurusan, 4:Kelas, 5:Saldo, 6:Status, 7:Opsi */
+    /* Indeks kolom:
+       0:#, 1:Nama, 2:NIS, 3:Jurusan, 4:Kelas, 5:Saldo, 6:Status SP, 7:Status, 8:Opsi */
     var dt = $tbl.DataTable({
       destroy:true,
       pageLength:25,
@@ -614,8 +673,8 @@ $data = mysqli_query($koneksi, "
       autoWidth:false,
       columnDefs:[
         {targets:0, width:"32px"},
-        {targets:[5,6,7], className:'text-center'}, // Saldo, Status, Opsi
-        {targets:7, orderable:false}
+        {targets:[5,6,7], className:'text-center'}, // Saldo, Status SP, Status
+        {targets:8, orderable:false}                // Opsi
       ],
       language:{
         search:"Cari:",
@@ -627,11 +686,18 @@ $data = mysqli_query($koneksi, "
 
     // Filter
     $('#filter-jurusan').on('change', function(){ dt.column(3).search(this.value).draw(); });
-    $('#filter-kelas').on('change', function(){ dt.column(4).search(this.value).draw(); }); // [BARU]
-    $('#filter-status').on('change', function(){ dt.column(6).search(this.value, true, false).draw(); });
+    $('#filter-kelas').on('change', function(){ dt.column(4).search(this.value).draw(); });
+    $('#filter-sp').on('change', function(){            // [R4] filter Status SP (kolom 6)
+      var v = this.value;
+      if (v === 'KRITIS')   { dt.column(6).search('SP3|SP4', true, false).draw(); }
+      else if (v === '')    { dt.column(6).search('').draw(); }
+      else                  { dt.column(6).search('\\b'+v+'\\b', true, false).draw(); }
+    });
+    $('#filter-status').on('change', function(){ dt.column(7).search(this.value, true, false).draw(); });
     $('#btn-reset').on('click', function(){
-      $('#filter-jurusan').val(''); 
-      $('#filter-kelas').val('');   // [BARU]
+      $('#filter-jurusan').val('');
+      $('#filter-kelas').val('');
+      $('#filter-sp').val('');
       $('#filter-status').val('');
       dt.search('').columns().search('').draw();
     });
