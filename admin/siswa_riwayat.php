@@ -234,6 +234,29 @@ $qbp = mysqli_query($koneksi, "SELECT ss.`user_id`, u.`$userNameCol` AS uname
         WHERE ss.`sekolah_id`='$SEKOLAH_ID' AND ss.`posisi_key`='guru_bp'
         ORDER BY u.`$userNameCol` ASC");
 if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['user_id'], 'nama'=>$r['uname']]; } }
+
+// ===== [R3] Data tren saldo poin KUMULATIF — 1 query UNION (kronologis) =====
+$trendPoints = []; // [['t'=>label, 'y'=>saldo_kumulatif], ...]
+$qTrend = mysqli_query($koneksi, "
+  (SELECT ip.`waktu` AS waktu, p.`prestasi_point` AS delta
+     FROM `input_prestasi` ip
+     JOIN `prestasi` p ON ip.`prestasi`=p.`prestasi_id`
+    WHERE ip.`siswa`='$id_siswa')
+  UNION ALL
+  (SELECT ig.`waktu` AS waktu, -pg.`pelanggaran_point` AS delta
+     FROM `input_pelanggaran` ig
+     JOIN `pelanggaran` pg ON ig.`pelanggaran`=pg.`pelanggaran_id`
+    WHERE ig.`siswa`='$id_siswa')
+  ORDER BY waktu ASC, delta DESC
+");
+if ($qTrend) {
+  $runSaldo = 0;
+  while ($row = mysqli_fetch_assoc($qTrend)) {
+    $runSaldo += (int)$row['delta'];
+    $trendPoints[] = ['t' => date('d/m/y H:i', strtotime($row['waktu'])), 'y' => $runSaldo];
+  }
+}
+$trendJson = json_encode($trendPoints, JSON_UNESCAPED_UNICODE);
 ?>
 <style>
   .page-accent{display:inline-block;padding:.25rem .6rem;font-weight:600;border-radius:999px;background:linear-gradient(135deg,#3b82f6,#06b6d4);color:#fff;font-size:12px;box-shadow:0 4px 14px rgba(59,130,246,.25)}
@@ -324,6 +347,17 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
   .saldo-green{background:linear-gradient(90deg,#86efac,#22c55e)}
   .saldo-red{background:linear-gradient(90deg,#fecaca,#ef4444)}
   .saldo-legend{display:flex;justify-content:space-between;font-size:12px;color:#0f172a;margin-top:8px}
+  /* [R3] Kartu grafik tren saldo */
+  .trend-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;box-shadow:0 12px 24px rgba(2,6,23,.06)}
+  .trend-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .trend-head .fa-line-chart{color:#6366f1}
+  .trend-legend{display:flex;gap:12px;font-size:12px;color:#475569}
+  .trend-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:4px}
+  .dot-green{background:#22c55e}.dot-amber{background:#f59e0b}.dot-red{background:#ef4444}
+  .trend-canvas-wrap{position:relative;width:100%;height:260px}
+  .trend-empty{text-align:center;color:#64748b;padding:28px 10px}
+  .trend-empty i{font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px}
+  @media (max-width:576px){ .trend-canvas-wrap{height:220px} }
   .viol-wrap{background:linear-gradient(180deg,#f8fafc,#f1f5f9);border:1px solid #e5e7eb;border-radius:12px;padding:12px;box-shadow:0 12px 24px rgba(2,6,23,.06)}
   .viol-bar{height:10px;border-radius:999px;background:#e5e7eb;overflow:hidden}
   .viol-fill{height:100%; width:0; transition:width .4s ease; background:#f59e0b}
@@ -466,6 +500,31 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
                   <div class="saldo-legend">
                     <div><b>Progres Saldo Poin</b>: <span style="color:<?php echo $isPos?'#059669':'#b91c1c'; ?>;"><?php echo ($saldo>=0?'+':'').(int)$saldo; ?></span> dari ±<?php echo (int)$scaleMaxSaldo; ?></div>
                     <div><?php echo $percentSaldo; ?>%</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- [R3] Grafik Tren Saldo Poin -->
+              <div class="row" style="margin-top:14px;">
+                <div class="col-lg-12">
+                  <div class="trend-card">
+                    <div class="trend-head">
+                      <div><i class="fa fa-line-chart"></i> <b>Tren Saldo Poin</b> <span class="text-muted" style="font-weight:400">— akumulasi dari waktu ke waktu</span></div>
+                      <div class="trend-legend">
+                        <span><i class="dot dot-green"></i> Aman</span>
+                        <span><i class="dot dot-amber"></i> Waspada</span>
+                        <span><i class="dot dot-red"></i> Zona SP</span>
+                      </div>
+                    </div>
+                    <?php if (empty($trendPoints)): ?>
+                      <div class="trend-empty">
+                        <i class="fa fa-area-chart"></i>
+                        <div><b>Belum ada transaksi poin</b> untuk siswa ini.</div>
+                        <small class="text-muted">Grafik tren akan muncul setelah ada input prestasi/pelanggaran.</small>
+                      </div>
+                    <?php else: ?>
+                      <div class="trend-canvas-wrap"><canvas id="trendSaldoChart"></canvas></div>
+                    <?php endif; ?>
                   </div>
                 </div>
               </div>
@@ -1048,4 +1107,70 @@ if($qbp){ while($r=mysqli_fetch_assoc($qbp)){ $guruBpList[] = ['user_id'=>$r['us
       });
     });
   });
+</script>
+
+<script>
+  // ===== [R3] Grafik Tren Saldo Poin (Chart.js v4) =====
+  (function(){
+    var el = document.getElementById('trendSaldoChart');
+    if (!el || typeof Chart === 'undefined') return;
+    var pts = <?php echo $trendJson ?: '[]'; ?>;
+    if (!pts.length) return;
+
+    var labels = pts.map(function(p){ return p.t; });
+    var data   = pts.map(function(p){ return p.y; });
+
+    // Warna per zona berdasarkan saldo kumulatif
+    function zoneColor(y){
+      if (y >= 0)  return '#22c55e';   // hijau: aman
+      if (y > -21) return '#f59e0b';   // kuning: waspada (belum ambang SP1)
+      return '#ef4444';                // merah: zona SP
+    }
+
+    var ctx  = el.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 260);
+    grad.addColorStop(0, 'rgba(99,102,241,.18)');
+    grad.addColorStop(1, 'rgba(99,102,241,.01)');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Saldo Poin',
+          data: data,
+          fill: true,
+          backgroundColor: grad,
+          borderColor: '#6366f1',
+          borderWidth: 2,
+          tension: .25,
+          pointRadius: data.length > 40 ? 0 : 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: data.map(zoneColor),
+          segment: { borderColor: function(c){ return zoneColor(c.p1.parsed.y); } }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(c){
+                var v = c.parsed.y;
+                var zona = v >= 0 ? 'Aman' : (v > -21 ? 'Waspada' : 'Zona SP');
+                return '  Saldo: ' + (v >= 0 ? '+' : '') + v + '  (' + zona + ')';
+              }
+            }
+          }
+        },
+        scales: {
+          y: { grid: { color: 'rgba(148,163,184,.18)' }, ticks: { precision: 0 } },
+          x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }
+        }
+      }
+    });
+  })();
 </script>
