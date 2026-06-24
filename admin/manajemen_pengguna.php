@@ -27,6 +27,15 @@ $tab = $_GET['tab'] ?? 'akun'; // akun | sekretaris | piket
 // ====== Util ======
 function _h($x){return htmlspecialchars((string)$x, ENT_QUOTES,'UTF-8');}
 function q1($db,$sql){$r=mysqli_query($db,$sql);return $r?mysqli_fetch_assoc($r):null;}
+function time_ago(?string $dt): string {
+  if (!$dt) return '<span class="text-muted">Belum pernah</span>';
+  $diff = time() - strtotime($dt);
+  if ($diff < 60)     return 'Baru saja';
+  if ($diff < 3600)   return (int)($diff/60) . ' mnt lalu';
+  if ($diff < 86400)  return (int)($diff/3600) . ' jam lalu';
+  if ($diff < 604800) return (int)($diff/86400) . ' hari lalu';
+  return date('d M Y', strtotime($dt));
+}
 
 /* ==================== [BARU] FILTER USER TERSEMBUNYI ==================== */
 /* Akun/identitas di bawah akan DISSEMBUNYIKAN dari tabel daftar pengguna */
@@ -239,7 +248,7 @@ $where[] = sql_not_in($koneksi, 'u.user_nama',     $HIDE_NAMES);
 $whereSql = 'WHERE '.implode(' AND ', $where);
 
 $users = mysqli_query($koneksi,
-  "SELECT u.user_id, u.user_nama, u.user_username, u.user_foto,
+  "SELECT u.user_id, u.user_nama, u.user_username, u.user_foto, u.last_login,
           GROUP_CONCAT(r.role_key ORDER BY r.role_key SEPARATOR ', ') AS roles
    FROM user u
    LEFT JOIN user_roles ur ON ur.user_id = u.user_id
@@ -462,7 +471,8 @@ include 'header.php';
                 <th>Nama</th>
                 <th>Username</th>
                 <th>Roles</th>
-                <th width="10%">Foto</th>
+                <th>Login Terakhir</th>
+                <th width="8%">Foto</th>
                 <th width="12%">Aksi</th>
               </tr>
             </thead>
@@ -498,6 +508,7 @@ include 'header.php';
                     }
                   ?>
                 </td>
+                <td style="white-space:nowrap;font-size:12px"><?= time_ago($u['last_login'] ?? null) ?></td>
                 <td class="text-center">
                   <?php if(empty($u['user_foto'])): ?>
                     <img src="../gambar/sistem/user.png" style="width:30px;height:auto">
