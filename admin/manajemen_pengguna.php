@@ -12,6 +12,7 @@
 
 // ====== Auth & koneksi (JANGAN output apa pun sebelum blok AJAX) ======
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/epoin_security.php';
 ensure_logged_in();
 
 include '../koneksi.php';
@@ -22,17 +23,6 @@ $SELF = htmlspecialchars(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), ENT_Q
 
 // Tab aktif
 $tab = $_GET['tab'] ?? 'akun'; // akun | sekretaris | piket
-
-// ====== CSRF helper ======
-if (!isset($_SESSION['csrf'])) { $_SESSION['csrf'] = bin2hex(random_bytes(16)); }
-$CSRF = $_SESSION['csrf'];
-function require_csrf_all() {
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (empty($_POST['csrf']) || !hash_equals($_SESSION['csrf'], $_POST['csrf'])) {
-      http_response_code(419); exit('CSRF token invalid');
-    }
-  }
-}
 
 // ====== Util ======
 function _h($x){return htmlspecialchars((string)$x, ENT_QUOTES,'UTF-8');}
@@ -70,7 +60,7 @@ $DEFAULT_RESET_PASSWORD = '123456';
  * ============  BLOK AJAX: KELUAR DENGAN JSON  ============
  * ========================================================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-  require_csrf_all();
+  if (!epoin_csrf_validate()) { http_response_code(419); exit('CSRF token invalid'); }
   header('Content-Type: application/json; charset=utf-8');
   $act = $_POST['action'];
 
@@ -158,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
  * ========  BLOK POST Non-AJAX: Sekretaris / Piket  =======
  * ========================================================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
-  require_csrf_all();
+  if (!epoin_csrf_validate()) { http_response_code(419); exit('CSRF token invalid'); }
   $act = $_POST['act'] ?? '';
 
   // ===== Sekretaris =====
@@ -547,7 +537,7 @@ include 'header.php';
       <div class="modal-dialog">
         <div class="modal-content">
           <form id="form-roles" method="post">
-            <input type="hidden" name="csrf" value="<?=$CSRF?>">
+            <?= epoin_csrf_field() ?>
             <input type="hidden" name="action" value="save_user_roles">
             <input type="hidden" name="uid" id="roles-uid" value="0">
             <div class="modal-header">
@@ -568,7 +558,7 @@ include 'header.php';
 
     <!-- FORM DELETE (POST + CSRF) -->
     <form id="form-delete" method="post" style="display:none">
-      <input type="hidden" name="csrf" value="<?=$CSRF?>">
+      <?= epoin_csrf_field() ?>
       <input type="hidden" name="action" value="delete_user">
       <input type="hidden" name="uid" id="del-uid" value="0">
     </form>
@@ -642,14 +632,14 @@ include 'header.php';
                   <div class="btn-group">
                     <?php if ((int)$row['is_sekretaris']===1): ?>
                       <form method="post" onsubmit="return confirm('Cabut status sekretaris untuk <?= _h($row['siswa_nama']) ?>?')" style="display:inline">
-                        <input type="hidden" name="csrf" value="<?=$CSRF?>">
+                        <?= epoin_csrf_field() ?>
                         <input type="hidden" name="act" value="sek_revoke">
                         <input type="hidden" name="siswa_id" value="<?= (int)$row['siswa_id'] ?>">
                         <button class="btn btn-warning" title="Cabut Sekretaris" data-toggle="tooltip"><i class="fa fa-unlink"></i></button>
                       </form>
                     <?php else: ?>
                       <form method="post" onsubmit="return confirm('Jadikan <?= _h($row['siswa_nama']) ?> sebagai sekretaris?')" style="display:inline">
-                        <input type="hidden" name="csrf" value="<?=$CSRF?>">
+                        <?= epoin_csrf_field() ?>
                         <input type="hidden" name="act" value="sek_make">
                         <input type="hidden" name="siswa_id" value="<?= (int)$row['siswa_id'] ?>">
                         <button class="btn btn-primary" title="Jadikan Sekretaris" data-toggle="tooltip"><i class="fa fa-user-plus"></i></button>
@@ -657,7 +647,7 @@ include 'header.php';
                     <?php endif; ?>
 
                     <form method="post" onsubmit="return confirm('Reset password akun siswa + sekretaris (jika terhubung) ke default?')" style="display:inline">
-                      <input type="hidden" name="csrf" value="<?=$CSRF?>">
+                      <?= epoin_csrf_field() ?>
                       <input type="hidden" name="act" value="sek_resetpass">
                       <input type="hidden" name="siswa_id" value="<?= (int)$row['siswa_id'] ?>">
                       <button class="btn btn-danger" title="Reset = Password Siswa" data-toggle="tooltip"><i class="fa fa-refresh"></i></button>
@@ -727,14 +717,14 @@ include 'header.php';
                 <td>
                   <?php if ((int)$g['is_piket']===1): ?>
                     <form method="post" style="display:inline" onsubmit="return confirm('Hapus dari Guru Piket?')">
-                      <input type="hidden" name="csrf" value="<?=$CSRF?>">
+                      <?= epoin_csrf_field() ?>
                       <input type="hidden" name="act" value="piket_revoke">
                       <input type="hidden" name="user_id" value="<?= (int)$g['user_id'] ?>">
                       <button class="btn btn-warning" title="Hapus dari Piket" data-toggle="tooltip"><i class="fa fa-unlink"></i></button>
                     </form>
                   <?php else: ?>
                     <form method="post" style="display:inline" onsubmit="return confirm('Tambahkan sebagai Guru Piket?')">
-                      <input type="hidden" name="csrf" value="<?=$CSRF?>">
+                      <?= epoin_csrf_field() ?>
                       <input type="hidden" name="act" value="piket_make">
                       <input type="hidden" name="user_id" value="<?= (int)$g['user_id'] ?>">
                       <button class="btn btn-primary" title="Tambahkan sebagai Piket" data-toggle="tooltip"><i class="fa fa-user-plus"></i></button>
@@ -766,6 +756,7 @@ include 'header.php';
 <!-- ====== JS: Kelola Role (AJAX) + Helpers + Pagination Sekretaris & Piket ====== -->
 
 <script>
+var CSRF_TOKEN = '<?= epoin_csrf_token() ?>';
 (function(){
   function enableTooltips(){ if (window.jQuery && $.fn.tooltip) $('body').tooltip({ selector: '[data-toggle="tooltip"]' }); }
   document.addEventListener('DOMContentLoaded', enableTooltips);
@@ -793,7 +784,7 @@ $(document).on('click', '.btn-roles', function() {
   const uid = $(this).data('uid');
   $('#roles-uid').val(uid);
   $('#roles-list').html('Memuat...');
-  $.post('<?= $SELF ?>', { action:'get_user_roles', uid:uid, csrf:'<?=$CSRF?>' }, function(res) {
+  $.post('<?= $SELF ?>', { action:'get_user_roles', uid:uid, _csrf: CSRF_TOKEN }, function(res) {
     if (!res || !res.ok) { $('#roles-list').html('Gagal memuat'); return; }
     let html = '';
     res.roles.forEach(function(r) {
@@ -821,7 +812,7 @@ $('#form-roles').on('submit', function(e) {
   $.post('<?= $SELF ?>', fd, function(res) {
     if (res && res.ok) {
       const uid = $('#roles-uid').val();
-      $.post('<?= $SELF ?>', { action:'get_user_roles', uid:uid, csrf:'<?=$CSRF?>' }, function(r2) {
+      $.post('<?= $SELF ?>', { action:'get_user_roles', uid:uid, _csrf: CSRF_TOKEN }, function(r2) {
         if (r2 && r2.ok) {
           const row = $('tr[data-user-id="'+uid+'"]').find('.col-roles');
 
