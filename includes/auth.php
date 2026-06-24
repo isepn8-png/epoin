@@ -26,7 +26,7 @@ function current_user_id(){ return (int)($_SESSION['id'] ?? 0); }
 
 /* ===================== Query helpers ===================== */
 function fetch_user_by_username(mysqli $db, $username){
-  $sql = "SELECT user_id, user_nama, user_username, user_password, user_level, user_foto, last_login, linked_siswa_id
+  $sql = "SELECT user_id, user_nama, user_username, user_password, user_level, user_foto, last_login, linked_siswa_id, is_active
           FROM `user` WHERE user_username=? LIMIT 1";
   $stmt = $db->prepare($sql);
   $stmt->bind_param('s', $username);
@@ -140,6 +140,11 @@ function do_login_with_role($username, $password, $login_as){
   // Semua role staf (guru/tas/sekretaris/piket/administrator/superadmin) login via tabel `user`
   $user = fetch_user_by_username($koneksi, $username);
   if (!$user) return ['ok'=>false,'err'=>'USER_TIDAK_ADA','msg'=>'Akun tidak ditemukan.'];
+
+  // Cek akun suspend sebelum verifikasi password (jangan bocorkan info akun)
+  if (isset($user['is_active']) && (int)$user['is_active'] === 0) {
+    return ['ok'=>false,'err'=>'AKUN_SUSPEND','msg'=>'Akun Anda telah disuspend. Hubungi administrator.'];
+  }
 
   if (!_verify_password($password, $user['user_password'])){
     return ['ok'=>false,'err'=>'PASS_SALAH','msg'=>'Password salah.'];

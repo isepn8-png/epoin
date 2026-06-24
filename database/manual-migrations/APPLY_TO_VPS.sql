@@ -152,6 +152,37 @@ CREATE TABLE IF NOT EXISTS `etugas_pengumpulan` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+--  BLOK 4 — Kolom is_active di tabel user
+--  Fitur   : Suspend / Aktifkan akun pengguna
+--  Source  : database/manual-migrations/2026-06-24-001-add-is-active.sql
+-- ============================================================
+
+DROP PROCEDURE IF EXISTS epoin_add_is_active;
+
+DELIMITER $$
+CREATE PROCEDURE epoin_add_is_active()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME   = 'user'
+          AND COLUMN_NAME  = 'is_active'
+        LIMIT 1
+    ) THEN
+        ALTER TABLE `user`
+            ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1
+            AFTER `status_login`;
+        SELECT 'OK: kolom is_active ditambahkan ke tabel user.' AS hasil;
+    ELSE
+        SELECT 'SKIP: kolom is_active sudah ada.' AS hasil;
+    END IF;
+END $$
+DELIMITER ;
+
+CALL epoin_add_is_active();
+DROP PROCEDURE IF EXISTS epoin_add_is_active;
+
+-- ============================================================
 --  VERIFIKASI — jalankan setelah semua blok di atas
 -- ============================================================
 --
@@ -170,6 +201,11 @@ CREATE TABLE IF NOT EXISTS `etugas_pengumpulan` (
 -- 3. Pastikan tabel etugas ada:
 --    SHOW TABLES LIKE 'etugas';
 --    → Harus mengembalikan 'etugas'.
+--
+-- 4. Pastikan is_active ada di tabel user:
+--    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+--    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='user' AND COLUMN_NAME='is_active';
+--    → Harus mengembalikan 1 baris.
 --
 -- ============================================================
 --  SELESAI

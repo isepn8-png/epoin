@@ -149,6 +149,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     echo json_encode(['ok'=>true]); exit;
   }
 
+  // --- Toggle suspend / aktifkan akun
+  if ($act === 'toggle_suspend') {
+    $uid = (int)($_POST['uid'] ?? 0);
+    $me  = (int)($_SESSION['id'] ?? 0);
+    if ($uid <= 0) { echo json_encode(['ok'=>false,'msg'=>'User tidak valid']); exit; }
+    if ($uid === $me) { echo json_encode(['ok'=>false,'msg'=>'Tidak boleh suspend akun sendiri']); exit; }
+
+    // Cegah suspend akun superadmin
+    $rsSa = mysqli_query($koneksi,"SELECT 1 FROM user_roles ur JOIN roles r ON r.role_id=ur.role_id WHERE ur.user_id=".(int)$uid." AND r.role_key='superadmin' LIMIT 1");
+    if ($rsSa && mysqli_num_rows($rsSa) > 0) { echo json_encode(['ok'=>false,'msg'=>'Akun superadmin tidak dapat disuspend']); exit; }
+
+    $cur = q1($koneksi, "SELECT COALESCE(is_active,1) AS is_active FROM user WHERE user_id=".(int)$uid);
+    if (!$cur) { echo json_encode(['ok'=>false,'msg'=>'User tidak ditemukan']); exit; }
+    $newState = ((int)$cur['is_active'] === 1) ? 0 : 1;
+
+    $stmt = mysqli_prepare($koneksi, "UPDATE user SET is_active=? WHERE user_id=?");
+    mysqli_stmt_bind_param($stmt,'ii',$newState,$uid);
+    mysqli_stmt_execute($stmt); mysqli_stmt_close($stmt);
+    echo json_encode(['ok'=>true,'is_active'=>$newState]); exit;
+  }
+
   echo json_encode(['ok'=>false,'msg'=>'Aksi tidak dikenal']); exit;
 }
 /* ======================= END AJAX ======================= */
@@ -249,6 +270,7 @@ $whereSql = 'WHERE '.implode(' AND ', $where);
 
 $users = mysqli_query($koneksi,
   "SELECT u.user_id, u.user_nama, u.user_username, u.user_foto, u.last_login,
+          COALESCE(u.is_active, 1) AS is_active,
           GROUP_CONCAT(r.role_key ORDER BY r.role_key SEPARATOR ', ') AS roles
    FROM user u
    LEFT JOIN user_roles ur ON ur.user_id = u.user_id
@@ -472,6 +494,7 @@ include 'header.php';
                 <th>Username</th>
                 <th>Roles</th>
                 <th>Login Terakhir</th>
+                <th width="6%">Status</th>
                 <th width="8%">Foto</th>
                 <th width="12%">Aksi</th>
               </tr>
@@ -486,11 +509,13 @@ include 'header.php';
                 'superadmin'   => 'label label-danger',  // merah (bonus aman)
               ];
             ?>
-            <?php $no=1; while($u=mysqli_fetch_assoc($users)): ?>
+            <?php $no=1; $myId=(int)($_SESSION['id']??0); while($u=mysqli_fetch_assoc($users)): ?>
               <?php
                 // cek role superadmin utk sembunyikan tombol hapus (poin 1)
                 $rolesArr   = array_filter(array_map('trim', explode(',', $u['roles'] ?? '')));
                 $isSuperAdm = in_array('superadmin', $rolesArr, true);
+                $isActive   = (int)($u['is_active'] ?? 1);
+                $canSuspend = !$isSuperAdm && ((int)$u['user_id'] !== $myId);
               ?>
               <tr data-user-id="<?= (int)$u['user_id'] ?>">
                 <td><?= $no++ ?></td>
@@ -509,6 +534,13 @@ include 'header.php';
                   ?>
                 </td>
                 <td style="white-space:nowrap;font-size:12px"><?= time_ago($u['last_login'] ?? null) ?></td>
+                <td class="text-center col-status">
+                  <?php if ($isActive === 1): ?>
+                    <span class="label label-success">Aktif</span>
+                  <?php else: ?>
+                    <span class="label label-danger">Suspend</span>
+                  <?php endif; ?>
+                </td>
                 <td class="text-center">
                   <?php if(empty($u['user_foto'])): ?>
                     <img src="../gambar/sistem/user.png" style="width:30px;height:auto">
@@ -524,8 +556,14 @@ include 'header.php';
                     <button class="btn btn-info btn-sm btn-roles btn-icon-only" data-uid="<?= (int)$u['user_id'] ?>" title="Kelola Role" data-toggle="tooltip">
                       <i class="fa fa-users"></i>
                     </button>
+                    <?php if ($canSuspend): ?>
+                      <button class="btn btn-<?= $isActive===1?'default':'success' ?> btn-sm btn-suspend btn-icon-only"
+                        data-uid="<?= (int)$u['user_id'] ?>" data-active="<?= $isActive ?>"
+                        title="<?= $isActive===1?'Suspend':'Aktifkan' ?>" data-toggle="tooltip">
+                        <i class="fa fa-<?= $isActive===1?'ban':'check-circle' ?>"></i>
+                      </button>
+                    <?php endif; ?>
                     <?php
-                      // [REVISI POIN 1] — tidak tampilkan tombol hapus untuk SEMUA yang punya role superadmin
                       $canDelete = ((int)$u['user_id'] !== 1) && !$isSuperAdm;
                       if ($canDelete):
                     ?>
@@ -851,6 +889,40 @@ $('#form-roles').on('submit', function(e) {
       }, 'json');
     } else alert(res.msg || 'Gagal menyimpan role');
   }, 'json').fail(function(xhr){ console.error('AJAX error:', xhr.responseText); alert('Gagal menyimpan (lihat Console)'); });
+});
+
+// Suspend / Aktifkan user
+$(document).on('click', '.btn-suspend', function(){
+  const uid    = $(this).data('uid');
+  const active = parseInt($(this).data('active'), 10);
+  const action = active === 1 ? 'Suspend' : 'Aktifkan';
+  const html   = active === 1
+    ? 'User akan <b>dinonaktifkan</b> dan tidak dapat login.'
+    : 'User akan <b>diaktifkan kembali</b> dan bisa login.';
+  function doToggle(){
+    $.post('<?= $SELF ?>', {action:'toggle_suspend', uid:uid, _csrf:CSRF_TOKEN}, function(res){
+      if (res && res.ok) {
+        const ia = res.is_active;
+        const btn = $('.btn-suspend[data-uid="'+uid+'"]');
+        btn.data('active', ia).attr('data-active', ia);
+        btn.attr('title', ia===1?'Suspend':'Aktifkan');
+        btn.removeClass('btn-default btn-success').addClass(ia===1?'btn-default':'btn-success');
+        btn.find('i').attr('class','fa fa-'+(ia===1?'ban':'check-circle'));
+        $('tr[data-user-id="'+uid+'"] .col-status').html(ia===1
+          ? '<span class="label label-success">Aktif</span>'
+          : '<span class="label label-danger">Suspend</span>');
+        if ($.fn.tooltip) $('[data-toggle="tooltip"]').tooltip('fixTitle');
+      } else alert(res.msg || 'Gagal mengubah status');
+    },'json').fail(function(){ alert('Gagal (lihat Console)'); });
+  }
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: action + ' Akun?', html: html+'<br><small style="color:#6b7280">Dapat diubah kembali kapan saja.</small>',
+      icon: active===1?'warning':'question', showCancelButton:true,
+      confirmButtonText:'<i class="fa fa-'+(active===1?'ban':'check-circle')+'"></i> '+action,
+      cancelButtonText:'Batal', customClass:{popup:'swal2-brand'}
+    }).then(function(r){ if(r.isConfirmed) doToggle(); });
+  } else { if(confirm(action+' user ini?')) doToggle(); }
 });
 
 // Hapus user (POST + CSRF)
