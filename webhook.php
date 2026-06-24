@@ -54,6 +54,11 @@ if ($result === false) {
     exit;
 }
 
+// Bersihkan OPcache supaya file PHP yang baru langsung dipakai
+if (function_exists('opcache_reset')) {
+    opcache_reset();
+}
+
 // Log ringkasan push
 $pusher = $data['pusher']['name'] ?? 'unknown';
 $commit = $data['head_commit']['message'] ?? 'no message';
