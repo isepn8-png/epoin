@@ -172,6 +172,7 @@ $previewSrc = $user['user_foto'] ? ('../gambar/user/'.htmlspecialchars($user['us
 
           <div class="box-body">
             <form action="user_update.php" method="post" enctype="multipart/form-data" id="formEditUser" autocomplete="off">
+              <?= epoin_csrf_field() ?>
               <input type="hidden" name="id" value="<?= htmlspecialchars($user['user_id']) ?>">
               <input type="hidden" name="old_foto" value="<?= htmlspecialchars($user['user_foto'] ?? '') ?>">
               <input type="hidden" name="redirect_to" value="manajemen_pengguna.php"><!-- pastikan redirect ke menu baru -->
