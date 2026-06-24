@@ -41,3 +41,6 @@ mysqli_set_charset($koneksi, 'utf8mb4');
 if (!isset($conn)) {
     $conn = $koneksi;
 }
+
+// Helper akademik terpusat (TA & semester) — sediakan epoin_*() di semua modul.
+require_once __DIR__ . '/includes/akademik_helper.php';

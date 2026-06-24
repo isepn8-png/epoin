@@ -3,43 +3,82 @@
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../koneksi.php';
+require_once __DIR__ . '/../includes/epoin_security.php';
+// Helper akademik (epoin_resolve_semester, dll.) — normalnya sudah di-load koneksi.php; jaga-jaga:
+if (!function_exists('epoin_resolve_semester')) {
+  require_once __DIR__ . '/../includes/akademik_helper.php';
+}
+
+// === GUARD KEAMANAN: khusus staf (admin/guru/dll), tolak siswa & tamu. ===
+// WAJIB dipanggil SEBELUM proses POST & sebelum output apa pun. Sebelumnya
+// aksi POST (add/delete/generate) berjalan tanpa cek login sama sekali.
+$user_id = epoin_staff_only_guard();
 
 function escs($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function i($v){ return (int)$v; }
-function _get($k,$d=null){ return isset($_GET[$k]) ? trim($_GET[$k]) : $d; }
-function _post($k,$d=null){ return isset($_POST[$k]) ? trim($_POST[$k]) : $d; }
-function valid_ymd($s){ return is_string($s) && preg_match('/^\d{4}-\d{2}-\d{2}$/',$s); }
+function _get($k,$d=null){ return isset($_GET[$k]) ? trim((string)$_GET[$k]) : $d; }
+function _post($k,$d=null){ return isset($_POST[$k]) ? trim((string)$_POST[$k]) : $d; }
+function valid_ymd($s){ return is_string($s) && preg_match('/^\d{4}-\d{2}-\d{2}$/',$s) && strtotime($s)!==false; }
 function fmt_dmy($ymd){ if(!$ymd) return '-'; $ts=strtotime($ymd); return $ts?date('d/m/Y',$ts):escs($ymd); }
-function table_exists($k,$n){ $r=@mysqli_query($k,"SHOW TABLES LIKE '".mysqli_real_escape_string($k,$n)."'"); return $r && mysqli_num_rows($r)>0; }
+if (!function_exists('table_exists')) {
+  function table_exists($k,$n){ $r=@mysqli_query($k,"SHOW TABLES LIKE '".mysqli_real_escape_string($k,$n)."'"); return $r && mysqli_num_rows($r)>0; }
+}
 
 $today = date('Y-m-d');
 
-// === Ambil TA aktif + daftar TA
-$ta_aktif = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT ta_id, ta_nama FROM ta WHERE ta_status=1 ORDER BY ta_id DESC LIMIT 1"));
-$TA = isset($_GET['ta']) ? i($_GET['ta']) : i($ta_aktif['ta_id'] ?? 0);
+// Tipe libur valid — samakan dengan ENUM kolom kalender_libur.tipe
+$TIPE_VALID = ['nasional','sekolah','kegiatan','cuti_bersama','lain'];
+
+// Prasyarat tabel/view (degrade rapi, bukan fatal, bila DB belum dimigrasi)
+$HAS_KALENDER = table_exists($koneksi,'kalender_libur');
+$HAS_VIEWNE   = table_exists($koneksi,'view_non_efektif');
+$HAS_HARIEF   = table_exists($koneksi,'hari_efektif');
+
+// === Ambil TA aktif + daftar TA (via helper terpusat) ===
+$ta_aktif = epoin_ta_aktif($koneksi);
+$TA  = isset($_GET['ta']) ? i($_GET['ta']) : (int)($ta_aktif['ta_id'] ?? 0);
 $tas = mysqli_query($koneksi,"SELECT ta_id, ta_nama FROM ta ORDER BY ta_id DESC");
 
-// Semester & rentang patokan
-$semester = isset($_GET['semester']) ? i($_GET['semester']) : 1;
-$ta_row = mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT ta_nama FROM ta WHERE ta_id=$TA"));
-$ta_nama = trim($ta_row['ta_nama'] ?? '');
-preg_match('/(\d{4})\D+(\d{4})/',$ta_nama,$m);
-$y1 = isset($m[1]) ? (int)$m[1] : (int)date('Y');
-$y2 = isset($m[2]) ? (int)$m[2] : $y1+1;
-if($semester==2){ $semStart="$y2-01-01"; $semEnd="$y2-06-30"; } else { $semStart="$y1-07-01"; $semEnd="$y1-12-31"; }
+// === Semester: OTOMATIS sesuai bulan berjalan (Jul–Des=1, Jan–Jun=2). ===
+// Bisa di-override manual lewat ?semester=1|2. Logika identik dgn modul lain.
+$semester          = epoin_resolve_semester();
+$semester_is_auto  = !isset($_GET['semester']);
+$ta_row  = ($TA>0) ? mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT ta_nama FROM ta WHERE ta_id=".i($TA))) : null;
+$ta_nama = trim($ta_row['ta_nama'] ?? ($ta_aktif['ta_nama'] ?? ''));
+[$semStart,$semEnd] = epoin_semester_range($ta_nama,$semester);
 $hari_sekolah = (_get('hari_sekolah','5') === '6') ? 6 : 5;
 
 // === Aksi: tambah libur (single / range)
 $msg = '';
 if ($_SERVER['REQUEST_METHOD']==='POST') {
   $act = _post('act','');
+  // CSRF wajib untuk semua aksi yang mengubah data
+  if (!epoin_csrf_validate()) {
+    $msg = "<span class='text-danger'><b>Ditolak:</b> token keamanan (CSRF) tidak valid. Muat ulang halaman lalu coba lagi.</span>";
+    $act = '';
+  }
   if ($act==='add') {
     $tgl1 = _post('tgl1','');
     $tgl2 = _post('tgl2','');
     $tipe = _post('tipe','sekolah');
+    if (!in_array($tipe, $TIPE_VALID, true)) $tipe = 'sekolah'; // cegah nilai di luar ENUM
     $ket  = _post('keterangan','');
     $ta_post = _post('ta_id','');
-    $scope_kelas_id = _post('scope_kelas_id','');
+
+    // === Scope kelas MULTI-PILIH ===
+    // scope_kelas_id[] = daftar kelas tercentang. "Semua Kelas" (scope_all=1) atau
+    // tidak ada yang dipilih => NULL (berlaku untuk semua kelas / satu baris saja).
+    $scope_all = (_post('scope_all','') === '1');
+    $rawScopes = $_POST['scope_kelas_id'] ?? [];
+    if (!is_array($rawScopes)) $rawScopes = ($rawScopes === '' ? [] : [$rawScopes]);
+    // hanya terima kelas yang benar-benar milik TA terpilih (anti tamper)
+    $validKelas = [];
+    $rk = mysqli_query($koneksi, "SELECT kelas_id FROM kelas WHERE kelas_ta=".i($TA));
+    while ($rk && $row = mysqli_fetch_row($rk)) { $validKelas[(int)$row[0]] = true; }
+    $selKelas = [];
+    foreach ($rawScopes as $v) { $v = (int)$v; if ($v > 0 && isset($validKelas[$v])) $selKelas[$v] = $v; }
+    // Daftar scope yang ditulis: [null] = semua, atau satu entri per kelas terpilih
+    $scopeList = ($scope_all || !$selKelas) ? [null] : array_values($selKelas);
 
     $err = [];
     if (!valid_ymd($tgl1)) $err[]='Tanggal mulai tidak valid';
@@ -51,28 +90,30 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
       // expand range
       $d = strtotime($tgl1); $e = strtotime($tgl2);
       if ($d>$e){ $tmp=$d; $d=$e; $e=$tmp; }
-      $ins=0; $skip=0;
+      $ta_val = ($ta_post==='')? null : i($ta_post);
+      $ins=0; $skip=0; $hari=0;
 
       while($d <= $e){
         $tgl = date('Y-m-d',$d);
-        // validasi tumpang tindih (cek sudah ada baris identik pada tanggal & scope & TA)
-        $ta_val = ($ta_post==='')? null : i($ta_post);
-        $scope_val = ($scope_kelas_id==='')? null : i($scope_kelas_id);
-
-        // gunakan INSERT IGNORE bila pakai unique index; jika tidak ada, lakukan cek manual
-        if (mysqli_query($koneksi, "INSERT IGNORE INTO kalender_libur (ta_id,tgl,tipe,keterangan,scope_kelas_id) VALUES (".
-            ($ta_val===null?'NULL':i($ta_val)).", '".
-            mysqli_real_escape_string($koneksi,$tgl)."', '".
-            mysqli_real_escape_string($koneksi,$tipe)."', '".
-            mysqli_real_escape_string($koneksi,$ket)."', ".
-            ($scope_val===null?'NULL':i($scope_val)).")")) {
-          if (mysqli_affected_rows($koneksi)>0) $ins++; else $skip++;
-        } else {
-          $skip++;
+        $hari++;
+        // satu baris per kombinasi (tanggal × kelas terpilih); dedup oleh unique index
+        foreach ($scopeList as $scope_val) {
+          if (mysqli_query($koneksi, "INSERT IGNORE INTO kalender_libur (ta_id,tgl,tipe,keterangan,scope_kelas_id,created_by) VALUES (".
+              ($ta_val===null?'NULL':i($ta_val)).", '".
+              mysqli_real_escape_string($koneksi,$tgl)."', '".
+              mysqli_real_escape_string($koneksi,$tipe)."', '".
+              mysqli_real_escape_string($koneksi,$ket)."', ".
+              ($scope_val===null?'NULL':i($scope_val)).", ".
+              i($user_id).")")) {
+            if (mysqli_affected_rows($koneksi)>0) $ins++; else $skip++;
+          } else {
+            $skip++;
+          }
         }
         $d = strtotime('+1 day',$d);
       }
-      $msg = "<span class='text-success'><b>Berhasil:</b> $ins ditambahkan".($skip? ", $skip dilewati (duplikat)":"").".</span>";
+      $scopeInfo = ($scopeList === [null]) ? 'semua kelas' : (count($scopeList).' kelas');
+      $msg = "<span class='text-success'><b>Berhasil:</b> $ins baris ditambahkan ($hari hari × $scopeInfo)".($skip? ", $skip dilewati (duplikat)":"").".</span>";
     } else {
       $msg = "<span class='text-danger'>".escs(implode('; ',$err))."</span>";
     }
@@ -90,65 +131,95 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
   }
 
   if ($act==='generate_hari_efektif') {
-    // generate cache hari_efektif untuk TA & semester
-    // 1) kumpulkan semua weekdays sesuai hari_sekolah
-    $dates = [];
-    $d=strtotime($semStart); $e=strtotime($semEnd);
-    while($d<=$e){
-      $w=(int)date('N',$d); // 1..7
-      $is_schoolday = ($hari_sekolah==6) ? ($w<=6) : ($w<=5);
-      if($is_schoolday) $dates[] = date('Y-m-d',$d);
-      $d=strtotime('+1 day',$d);
-    }
-    // 2) ambil non-efektif dari view (lintas TA atau TA ini)
-    $non = [];
-    $qne = mysqli_query($koneksi, "
-      SELECT tgl
-      FROM view_non_efektif
-      WHERE tgl BETWEEN '".mysqli_real_escape_string($koneksi,$semStart)."' AND '".mysqli_real_escape_string($koneksi,$semEnd)."'
-        AND (ta_id IS NULL OR ta_id=$TA)
-    ");
-    while($r=mysqli_fetch_row($qne)){ $non[$r[0]]=true; }
-
-    // 3) sisakan efektif
-    $ef = [];
-    foreach($dates as $d){ if(empty($non[$d])) $ef[]=$d; }
-
-    // 4) tulis ke hari_efektif: hapus rentang lama TA, kemudian insert
-    mysqli_query($koneksi,"DELETE FROM hari_efektif WHERE ta_id=$TA AND tanggal BETWEEN '$semStart' AND '$semEnd'");
-    if ($ef) {
-      $values = [];
-      foreach($ef as $d){ $values[]="($TA,'".mysqli_real_escape_string($koneksi,$d)."',1)"; }
-      $chunks=array_chunk($values, 500);
-      foreach($chunks as $ch){
-        mysqli_query($koneksi,"INSERT INTO hari_efektif (ta_id,tanggal,is_efektif) VALUES ".implode(',',$ch));
+    if ($TA<=0) {
+      $msg = "<span class='text-danger'>Pilih Tahun Ajaran yang valid dulu sebelum generate.</span>";
+    } elseif (!$HAS_VIEWNE || !$HAS_HARIEF) {
+      $msg = "<span class='text-danger'>Tabel <code>hari_efektif</code>/<code>view_non_efektif</code> belum tersedia. Jalankan migrasi DB dulu.</span>";
+    } else {
+      // 1) kumpulkan semua weekdays sesuai hari_sekolah
+      $dates = [];
+      $d=strtotime($semStart); $e=strtotime($semEnd);
+      while($d<=$e){
+        $w=(int)date('N',$d); // 1..7
+        $is_schoolday = ($hari_sekolah==6) ? ($w<=6) : ($w<=5);
+        if($is_schoolday) $dates[] = date('Y-m-d',$d);
+        $d=strtotime('+1 day',$d);
       }
+      // 2) ambil non-efektif dari view (lintas TA atau TA ini)
+      $non = [];
+      $qne = mysqli_query($koneksi, "
+        SELECT tgl
+        FROM view_non_efektif
+        WHERE tgl BETWEEN '".mysqli_real_escape_string($koneksi,$semStart)."' AND '".mysqli_real_escape_string($koneksi,$semEnd)."'
+          AND (ta_id IS NULL OR ta_id=".i($TA).")
+      ");
+      while($qne && $r=mysqli_fetch_row($qne)){ $non[$r[0]]=true; }
+
+      // 3) sisakan efektif
+      $ef = [];
+      foreach($dates as $dd){ if(empty($non[$dd])) $ef[]=$dd; }
+
+      // 4) tulis ke hari_efektif dalam 1 TRANSAKSI: hapus rentang lama lalu insert.
+      //    Bila gagal di tengah → rollback agar tidak ada state setengah jadi.
+      $ok = true;
+      mysqli_begin_transaction($koneksi);
+      try {
+        mysqli_query($koneksi,"DELETE FROM hari_efektif WHERE ta_id=".i($TA)." AND tanggal BETWEEN '".mysqli_real_escape_string($koneksi,$semStart)."' AND '".mysqli_real_escape_string($koneksi,$semEnd)."'");
+        if ($ef) {
+          $values = [];
+          foreach($ef as $dd){ $values[]="(".i($TA).",'".mysqli_real_escape_string($koneksi,$dd)."',1)"; }
+          foreach(array_chunk($values, 500) as $ch){
+            if (!mysqli_query($koneksi,"INSERT INTO hari_efektif (ta_id,tanggal,is_efektif) VALUES ".implode(',',$ch))) {
+              throw new \RuntimeException(mysqli_error($koneksi));
+            }
+          }
+        }
+        mysqli_commit($koneksi);
+      } catch (\Throwable $ex) {
+        $ok = false;
+        @mysqli_rollback($koneksi);
+      }
+      $msg = $ok
+        ? "<span class='text-success'>Regenerasi hari efektif selesai. Total efektif: <b>".count($ef)."</b>.</span>"
+        : "<span class='text-danger'>Gagal regenerasi hari efektif (perubahan dibatalkan). Coba lagi.</span>";
     }
-    $msg = "<span class='text-success'>Regenerasi hari efektif selesai. Total efektif: <b>".count($ef)."</b>.</span>";
   }
 }
 
-// === Ambil daftar kelas utk scope
-$kelas = mysqli_query($koneksi,"SELECT kelas_id, kelas_nama FROM kelas WHERE kelas_ta=$TA ORDER BY kelas_nama");
+// === Ambil daftar kelas utk scope, kelompokkan per tingkat (angka di awal nama: "7A" -> 7)
+$kelas = mysqli_query($koneksi,"SELECT kelas_id, kelas_nama FROM kelas WHERE kelas_ta=".i($TA)." ORDER BY kelas_nama");
+$kelasByTingkat = [];
+while ($kelas && $k = mysqli_fetch_assoc($kelas)) {
+  $nm = (string)$k['kelas_nama'];
+  $tk = preg_match('/^\s*(\d+)/', $nm, $mm) ? $mm[1] : 'Lainnya';
+  $kelasByTingkat[$tk][] = ['id'=>(int)$k['kelas_id'], 'nama'=>$nm];
+}
+ksort($kelasByTingkat, SORT_NATURAL);
 
 // === List libur (filter kecil)
 $fil_tipe = _get('ft','');
 $fil_awal = _get('awal',$semStart);
 $fil_akhir= _get('akhir',$semEnd);
-$where = "WHERE tgl BETWEEN '".mysqli_real_escape_string($koneksi,$fil_awal)."' AND '".mysqli_real_escape_string($koneksi,$fil_akhir)."' AND (ta_id IS NULL OR ta_id=$TA)";
-if ($fil_tipe!=='') $where .= " AND tipe='".mysqli_real_escape_string($koneksi,$fil_tipe)."'";
-$qList = mysqli_query($koneksi,"SELECT id, ta_id, tgl, tipe, keterangan, scope_kelas_id FROM kalender_libur $where ORDER BY tgl ASC, tipe");
+$where = "WHERE kl.tgl BETWEEN '".mysqli_real_escape_string($koneksi,$fil_awal)."' AND '".mysqli_real_escape_string($koneksi,$fil_akhir)."' AND (kl.ta_id IS NULL OR kl.ta_id=".i($TA).")";
+if ($fil_tipe!=='') $where .= " AND kl.tipe='".mysqli_real_escape_string($koneksi,$fil_tipe)."'";
+// JOIN kelas sekali saja (hindari N+1 query nama kelas per baris)
+$qList = $HAS_KALENDER ? mysqli_query($koneksi,"
+  SELECT kl.id, kl.ta_id, kl.tgl, kl.tipe, kl.keterangan, kl.scope_kelas_id, k.kelas_nama
+  FROM kalender_libur kl
+  LEFT JOIN kelas k ON k.kelas_id = kl.scope_kelas_id
+  $where
+  ORDER BY kl.tgl ASC, kl.tipe") : false;
 
 // === Ringkasan non-efektif per tipe (hanya weekdays sesuai 5/6 hari, exclude Sabtu/Minggu)
 $sum = ['nasional'=>0,'sekolah'=>0,'kegiatan'=>0,'cuti_bersama'=>0,'lain'=>0];
-$qAll = mysqli_query($koneksi,"
+$qAll = $HAS_VIEWNE ? mysqli_query($koneksi,"
   SELECT tgl, tipe
   FROM view_non_efektif
   WHERE tgl BETWEEN '".mysqli_real_escape_string($koneksi,$semStart)."' AND '".mysqli_real_escape_string($koneksi,$semEnd)."'
-    AND (ta_id IS NULL OR ta_id=$TA)
+    AND (ta_id IS NULL OR ta_id=".i($TA).")
   ORDER BY tgl
-");
-while($r=mysqli_fetch_assoc($qAll)){
+") : false;
+while($qAll && $r=mysqli_fetch_assoc($qAll)){
   $w=(int)date('N', strtotime($r['tgl']));
   $schoolday = ($hari_sekolah==6) ? ($w<=6) : ($w<=5);
   if ($schoolday) $sum[$r['tipe']] = ($sum[$r['tipe']]??0) + 1;
@@ -220,6 +291,25 @@ include 'header.php';
 .badge-kegiatan{ background:#ecfccb; color:#3f6212; border-color:#d9f99d; }
 .badge-cuti_bersama{ background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
 .badge-lain{ background:#ede9fe; color:#4c1d95; border-color:#ddd6fe; }
+
+/* Panel Scope Kelas (multi-pilih) */
+.scope-panel{
+  display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start;
+  border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:#fbfdff;
+}
+.scope-panel label{ font-weight:600; margin:0; cursor:pointer; }
+.scope-panel input[type=checkbox]{ margin-right:5px; vertical-align:middle; }
+.scope-all{
+  display:inline-flex; align-items:center; padding:6px 10px; border-radius:10px;
+  background:#eef6ff; border:1px solid var(--blue-200); color:var(--blue-700); white-space:nowrap;
+}
+.scope-group{
+  border:1px dashed var(--line); border-radius:10px; padding:6px 10px; min-width:150px;
+}
+.scope-grp{ display:block; color:var(--blue-700); border-bottom:1px dashed var(--line); padding-bottom:4px; margin-bottom:6px; }
+.scope-items{ display:flex; flex-wrap:wrap; gap:6px 12px; }
+.scope-item{ font-weight:500!important; color:var(--ink-700); white-space:nowrap; }
+.scope-item:hover{ color:var(--blue-700); }
 
 /* DataTables polish kecil */
 .dataTables_wrapper .dataTables_length select,
@@ -299,7 +389,9 @@ include 'header.php';
           </div>
         </form>
         <div style="margin-top:8px; color:var(--ink-700);">
-          Rentang semester: <b><?=escs(fmt_dmy($semStart))?></b> s/d <b><?=escs(fmt_dmy($semEnd))?></b>
+          Semester aktif: <b><?=escs(epoin_semester_label($semester,'short'))?></b>
+          <?php if($semester_is_auto): ?><span class="title-badge" style="background:#ecfdf5;color:#065f46;border-color:#a7f3d0;"><i class="fa fa-magic"></i> otomatis (bulan ini)</span><?php endif; ?>
+          &nbsp;·&nbsp; Rentang: <b><?=escs(fmt_dmy($semStart))?></b> s/d <b><?=escs(fmt_dmy($semEnd))?></b>
         </div>
       </div>
     </div>
@@ -312,6 +404,7 @@ include 'header.php';
           <div class="box-body">
             <form method="post">
               <input type="hidden" name="act" value="add">
+              <?= epoin_csrf_field() ?>
               <div class="row">
                 <div class="col-sm-3">
                   <label>Tgl Mulai</label>
@@ -345,20 +438,28 @@ include 'header.php';
                   <label>Keterangan <span class="text-danger">*</span></label>
                   <input type="text" name="keterangan" class="form-control" placeholder="mis. Maulid Nabi / Class Meeting" required>
                 </div>
-                <div class="col-sm-3" style="margin-top:8px;">
-                  <label>Scope Kelas (opsional)</label>
-                  <select name="scope_kelas_id" class="form-control">
-                    <option value="">Semua Kelas</option>
-                    <?php mysqli_data_seek($kelas,0); while($k=mysqli_fetch_assoc($kelas)): ?>
-                      <option value="<?=i($k['kelas_id'])?>"><?=escs($k['kelas_nama'])?></option>
-                    <?php endwhile; ?>
-                  </select>
-                </div>
-                <div class="col-sm-3" style="margin-top:8px;">
+                <div class="col-sm-6" style="margin-top:8px;">
                   <label>&nbsp;</label><br>
                   <button class="btn btn-success" type="submit"><i class="fa fa-save"></i> Simpan</button>
                   <button class="btn btn-default" type="button" onclick="presetRange(3)"><i class="fa fa-magic"></i> 3 Hari</button>
                   <button class="btn btn-default" type="button" onclick="presetRange(5)"><i class="fa fa-magic"></i> 5 Hari</button>
+                </div>
+                <div class="col-sm-12" style="margin-top:10px;">
+                  <label>Scope Kelas (opsional) — pilih satu/lebih kelas, atau biarkan <b>Semua Kelas</b></label>
+                  <div class="scope-panel">
+                    <label class="scope-all"><input type="checkbox" name="scope_all" value="1" id="scopeAll" checked onclick="onScopeAll(this)"> <b>Semua Kelas</b></label>
+                    <?php foreach($kelasByTingkat as $tk=>$list): ?>
+                      <div class="scope-group">
+                        <label class="scope-grp"><input type="checkbox" class="grp" data-tk="<?=escs($tk)?>" onclick="onGroupToggle(this)"> Tingkat <?=escs($tk)?></label>
+                        <div class="scope-items">
+                          <?php foreach($list as $kk): ?>
+                            <label class="scope-item"><input type="checkbox" class="kelas-cb tk-<?=escs($tk)?>" name="scope_kelas_id[]" value="<?=i($kk['id'])?>" onclick="onKelasCb()"> <?=escs($kk['nama'])?></label>
+                          <?php endforeach; ?>
+                        </div>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
+                  <small class="text-muted">Mis. centang <b>Tingkat 7</b> → aturan berlaku untuk 7A–7E saja. Tiap kelas tersimpan sebagai baris terpisah.</small>
                 </div>
               </div>
             </form>
@@ -390,6 +491,7 @@ include 'header.php';
           <div class="box-body">
             <form method="post" onsubmit="return confirm('Hapus data terpilih?');">
               <input type="hidden" name="act" value="delete_bulk">
+              <?= epoin_csrf_field() ?>
               <div class="table-responsive">
                 <!-- Tambah ID untuk DataTables -->
                 <table class="table table-bordered table-striped" id="table-libur">
@@ -403,7 +505,7 @@ include 'header.php';
                     </tr>
                   </thead>
                   <tbody>
-                    <?php if(mysqli_num_rows($qList)==0): ?>
+                    <?php if(!$qList || mysqli_num_rows($qList)==0): ?>
                       <tr><td colspan="5"><em>Belum ada data</em></td></tr>
                     <?php else: while($r=mysqli_fetch_assoc($qList)): ?>
                       <tr>
@@ -415,12 +517,9 @@ include 'header.php';
                         <td><?=escs($r['keterangan'])?></td>
                         <td>
                           <?php
+                            // nama kelas sudah di-JOIN di $qList (tanpa query per baris)
                             if (is_null($r['scope_kelas_id'])) echo '<span class="text-muted">Semua</span>';
-                            else {
-                              $kid=i($r['scope_kelas_id']);
-                              $kn=mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT kelas_nama FROM kelas WHERE kelas_id=$kid"));
-                              echo escs($kn['kelas_nama']??('KID '.$kid));
-                            }
+                            else echo escs($r['kelas_nama'] ?? ('KID '.i($r['scope_kelas_id'])));
                           ?>
                         </td>
                       </tr>
@@ -440,7 +539,7 @@ include 'header.php';
           <div class="box-header with-border"><h3 class="box-title"><i class="fa fa-pie-chart"></i> Ringkasan Semester</h3></div>
           <div class="box-body">
             <div style="margin-bottom:8px;">
-              <div><b>TA:</b> <?=escs($ta_nama)?> | <b>Semester:</b> <?=$semester==1?'Jul–Des':'Jan–Jun'?></div>
+              <div><b>TA:</b> <?=escs($ta_nama)?> | <b>Semester:</b> <?=escs(epoin_semester_label($semester,'short'))?> (<?=escs(epoin_semester_label($semester,'range'))?>)</div>
               <div><b>Rentang:</b> <?=escs(fmt_dmy($semStart))?> – <?=escs(fmt_dmy($semEnd))?></div>
               <div><b>Hari Sekolah:</b> <?=$hari_sekolah?> hari</div>
             </div>
@@ -454,6 +553,7 @@ include 'header.php';
             </ul>
             <form method="post" onsubmit="return confirm('Generate ulang hari_efektif untuk TA/semester ini? Data sebelumnya di rentang ini akan dihapus. Lanjutkan?')">
               <input type="hidden" name="act" value="generate_hari_efektif">
+              <?= epoin_csrf_field() ?>
               <button class="btn btn-primary btn-block" type="submit"><i class="fa fa-cog"></i> Generate Hari Efektif</button>
             </form>
             <p class="text-muted" style="margin-top:8px;">Membuat cache <code>hari_efektif</code> berdasarkan weekdays (<?=$hari_sekolah?> hari) dikurangi semua libur pada <code>view_non_efektif</code>.</p>
@@ -477,6 +577,33 @@ function presetRange(n){
   d.setDate(d.getDate() + (n-1));
   var yyyy=d.getFullYear(), mm=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
   document.querySelector('input[name="tgl2"]').value = yyyy+'-'+mm+'-'+dd;
+}
+
+// ===== Scope Kelas multi-pilih =====
+function _scopeUncheckAll(){ var a=document.getElementById('scopeAll'); if(a) a.checked=false; }
+// "Semua Kelas" dicentang => kosongkan semua centang kelas & toggle tingkat
+function onScopeAll(cb){
+  if(cb.checked){
+    document.querySelectorAll('.kelas-cb, .grp').forEach(function(x){ x.checked=false; x.indeterminate=false; });
+  }
+}
+// Toggle satu tingkat => centang/lepas semua kelas di tingkat itu
+function onGroupToggle(g){
+  _scopeUncheckAll();
+  var tk = g.getAttribute('data-tk');
+  document.querySelectorAll('.kelas-cb.tk-'+tk).forEach(function(x){ x.checked = g.checked; });
+  g.indeterminate = false;
+}
+// Centang kelas individu => sinkronkan status toggle tingkat & lepas "Semua Kelas"
+function onKelasCb(){
+  _scopeUncheckAll();
+  document.querySelectorAll('.grp').forEach(function(g){
+    var tk = g.getAttribute('data-tk');
+    var items = document.querySelectorAll('.kelas-cb.tk-'+tk);
+    var on = 0; items.forEach(function(x){ if(x.checked) on++; });
+    g.checked = (items.length>0 && on===items.length);
+    g.indeterminate = (on>0 && on<items.length);
+  });
 }
 </script>
 

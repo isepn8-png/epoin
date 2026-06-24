@@ -3,10 +3,12 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/koneksi.php';
 require_once __DIR__ . '/../helpers/deskripsi_sts_helper.php';
+require_once __DIR__ . '/../../includes/akademik_helper.php'; // epoin_current_semester()
 
 $kelas_id   = (int)($_GET['kelas_id'] ?? 0);
 $mapel_id   = (int)($_GET['mapel_id'] ?? 0);
-$semester   = (int)($_GET['semester'] ?? 1);
+// Default semester OTOMATIS sesuai bulan (Jul–Des=1, Jan–Jun=2), konsisten lintas modul
+$semester   = (int)($_GET['semester'] ?? epoin_current_semester());
 
 if(!$kelas_id || !$mapel_id){
   echo json_encode(['ok'=>false,'msg'=>'Parameter kurang']); exit;
