@@ -1,4 +1,10 @@
-<?php include 'header.php'; ?>
+<?php
+// DEPRECATED: Halaman ini duplikat dari manajemen_pengguna.php yang lebih lengkap.
+// Redirect ke halaman utama agar bookmark lama tetap jalan.
+session_start();
+header('Location: manajemen_pengguna.php?tab=akun');
+exit;
+?>
 
 <style>
 /* ====== EPS polish — Manajemen Pengguna ====== */
