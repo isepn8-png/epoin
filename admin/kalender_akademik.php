@@ -65,20 +65,21 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     $ket  = _post('keterangan','');
     $ta_post = _post('ta_id','');
 
-    // === Scope kelas MULTI-PILIH ===
-    // scope_kelas_id[] = daftar kelas tercentang. "Semua Kelas" (scope_all=1) atau
-    // tidak ada yang dipilih => NULL (berlaku untuk semua kelas / satu baris saja).
-    $scope_all = (_post('scope_all','') === '1');
+    // === Scope kelas MULTI-PILIH (checkbox) ===
+    // scope_kelas_id[] = daftar kelas tercentang. Jika SEMUA kelas tercentang
+    // (atau tidak ada sama sekali) => simpan 1 baris NULL (= berlaku semua kelas).
+    // Jika sebagian => 1 baris per kelas terpilih.
     $rawScopes = $_POST['scope_kelas_id'] ?? [];
     if (!is_array($rawScopes)) $rawScopes = ($rawScopes === '' ? [] : [$rawScopes]);
     // hanya terima kelas yang benar-benar milik TA terpilih (anti tamper)
     $validKelas = [];
     $rk = mysqli_query($koneksi, "SELECT kelas_id FROM kelas WHERE kelas_ta=".i($TA));
     while ($rk && $row = mysqli_fetch_row($rk)) { $validKelas[(int)$row[0]] = true; }
+    $totalKelas = count($validKelas);
     $selKelas = [];
     foreach ($rawScopes as $v) { $v = (int)$v; if ($v > 0 && isset($validKelas[$v])) $selKelas[$v] = $v; }
-    // Daftar scope yang ditulis: [null] = semua, atau satu entri per kelas terpilih
-    $scopeList = ($scope_all || !$selKelas) ? [null] : array_values($selKelas);
+    // semua tercentang / kosong => NULL (berlaku semua, ringkas); sebagian => per kelas
+    $scopeList = (empty($selKelas) || count($selKelas) >= $totalKelas) ? [null] : array_values($selKelas);
 
     $err = [];
     if (!valid_ymd($tgl1)) $err[]='Tanggal mulai tidak valid';
@@ -445,21 +446,21 @@ include 'header.php';
                   <button class="btn btn-default" type="button" onclick="presetRange(5)"><i class="fa fa-magic"></i> 5 Hari</button>
                 </div>
                 <div class="col-sm-12" style="margin-top:10px;">
-                  <label>Scope Kelas (opsional) — pilih satu/lebih kelas, atau biarkan <b>Semua Kelas</b></label>
+                  <label>Scope Kelas (opsional) — default <b>semua kelas tercentang</b>. Hilangkan centang kelas yang tidak dikenai aturan.</label>
                   <div class="scope-panel">
-                    <label class="scope-all"><input type="checkbox" name="scope_all" value="1" id="scopeAll" checked onclick="onScopeAll(this)"> <b>Semua Kelas</b></label>
+                    <label class="scope-all"><input type="checkbox" id="scopeAll" checked onclick="onScopeAll(this)"> <b>Semua Kelas</b></label>
                     <?php foreach($kelasByTingkat as $tk=>$list): ?>
                       <div class="scope-group">
-                        <label class="scope-grp"><input type="checkbox" class="grp" data-tk="<?=escs($tk)?>" onclick="onGroupToggle(this)"> Tingkat <?=escs($tk)?></label>
+                        <label class="scope-grp"><input type="checkbox" class="grp" data-tk="<?=escs($tk)?>" checked onclick="onGroupToggle(this)"> Tingkat <?=escs($tk)?></label>
                         <div class="scope-items">
                           <?php foreach($list as $kk): ?>
-                            <label class="scope-item"><input type="checkbox" class="kelas-cb tk-<?=escs($tk)?>" name="scope_kelas_id[]" value="<?=i($kk['id'])?>" onclick="onKelasCb()"> <?=escs($kk['nama'])?></label>
+                            <label class="scope-item"><input type="checkbox" class="kelas-cb tk-<?=escs($tk)?>" name="scope_kelas_id[]" value="<?=i($kk['id'])?>" checked onclick="onKelasCb()"> <?=escs($kk['nama'])?></label>
                           <?php endforeach; ?>
                         </div>
                       </div>
                     <?php endforeach; ?>
                   </div>
-                  <small class="text-muted">Mis. centang <b>Tingkat 7</b> → aturan berlaku untuk 7A–7E saja. Tiap kelas tersimpan sebagai baris terpisah.</small>
+                  <small class="text-muted">Pakai toggle <b>Tingkat</b> untuk satu jenjang, atau centang per kelas. Semua tercentang = berlaku semua kelas (disimpan ringkas). Tiap kelas terpilih tersimpan sebagai baris terpisah.</small>
                 </div>
               </div>
             </form>
@@ -579,24 +580,20 @@ function presetRange(n){
   document.querySelector('input[name="tgl2"]').value = yyyy+'-'+mm+'-'+dd;
 }
 
-// ===== Scope Kelas multi-pilih =====
-function _scopeUncheckAll(){ var a=document.getElementById('scopeAll'); if(a) a.checked=false; }
-// "Semua Kelas" dicentang => kosongkan semua centang kelas & toggle tingkat
+// ===== Scope Kelas multi-pilih (default: semua tercentang) =====
+// "Semua Kelas" = master select-all: centang/lepas SEMUA kelas + toggle sekaligus
 function onScopeAll(cb){
-  if(cb.checked){
-    document.querySelectorAll('.kelas-cb, .grp').forEach(function(x){ x.checked=false; x.indeterminate=false; });
-  }
+  document.querySelectorAll('.kelas-cb, .grp').forEach(function(x){ x.checked = cb.checked; x.indeterminate=false; });
 }
 // Toggle satu tingkat => centang/lepas semua kelas di tingkat itu
 function onGroupToggle(g){
-  _scopeUncheckAll();
   var tk = g.getAttribute('data-tk');
   document.querySelectorAll('.kelas-cb.tk-'+tk).forEach(function(x){ x.checked = g.checked; });
   g.indeterminate = false;
+  syncScopeAll();
 }
-// Centang kelas individu => sinkronkan status toggle tingkat & lepas "Semua Kelas"
+// Centang kelas individu => sinkronkan toggle tingkat & master "Semua Kelas"
 function onKelasCb(){
-  _scopeUncheckAll();
   document.querySelectorAll('.grp').forEach(function(g){
     var tk = g.getAttribute('data-tk');
     var items = document.querySelectorAll('.kelas-cb.tk-'+tk);
@@ -604,6 +601,14 @@ function onKelasCb(){
     g.checked = (items.length>0 && on===items.length);
     g.indeterminate = (on>0 && on<items.length);
   });
+  syncScopeAll();
+}
+// Sinkronkan master "Semua Kelas" dari status seluruh kelas (checked/indeterminate)
+function syncScopeAll(){
+  var all = document.querySelectorAll('.kelas-cb');
+  var on = 0; all.forEach(function(x){ if(x.checked) on++; });
+  var m = document.getElementById('scopeAll');
+  if(m){ m.checked = (all.length>0 && on===all.length); m.indeterminate = (on>0 && on<all.length); }
 }
 </script>
 
