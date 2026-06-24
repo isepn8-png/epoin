@@ -82,6 +82,21 @@ while ($r = $rs->fetch_assoc()) { $roleKeys[] = $r['role_key']; }
 $stmt->close();
 $legacyLevel = $roleKeys ? $roleKeys[0] : 'user';
 
+// ===== guard self-lockout & anti-eskalasi superadmin (server-side) =====
+$selKeys       = array_map('strtolower', $roleKeys); // role_key terpilih (lowercase)
+$meId          = (int)($_SESSION['id'] ?? 0);
+$iAmSuperadmin = in_array('superadmin', array_map('strtolower', (array)($_SESSION['roles'] ?? [])), true);
+
+// (a) Anti-eskalasi: hanya Super Admin yang boleh MEMBERIKAN peran superadmin
+if (in_array('superadmin', $selKeys, true) && !$iAmSuperadmin) {
+  die('Ditolak: hanya Super Admin yang dapat memberikan peran superadmin.');
+}
+
+// (b) Anti self-lockout: admin tidak boleh mencabut peran admin-nya sendiri
+if ($id === $meId && !array_intersect(['administrator','superadmin'], $selKeys)) {
+  die('Ditolak: Anda tidak dapat mencabut peran administrator dari akun sendiri (mencegah terkunci).');
+}
+
 // ===== UPDATE user — prepared (password opsional) =====
 if ($pwHash !== null) {
   $stmt = $koneksi->prepare("UPDATE user SET user_nama=?, user_username=?, user_foto=?, user_level=?, user_password=? WHERE user_id=?");
