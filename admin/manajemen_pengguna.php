@@ -209,12 +209,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
     }
 
     if ($act==='sek_resetpass') {
-      $hash = md5($DEFAULT_RESET_PASSWORD); // sesuai pola dump
+      $hash = password_hash((string)$DEFAULT_RESET_PASSWORD, PASSWORD_DEFAULT);
       // reset password di tabel siswa
       $stmt = mysqli_prepare($koneksi, "UPDATE siswa SET siswa_password=? WHERE siswa_id=?");
       mysqli_stmt_bind_param($stmt,'si',$hash,$sid); mysqli_stmt_execute($stmt); mysqli_stmt_close($stmt);
-      // sinkron ke akun user yang terhubung (jika ada)
-      mysqli_query($koneksi, "UPDATE user SET user_password='".$hash."' WHERE linked_siswa_id=".(int)$sid);
+      // sinkron ke akun user yang terhubung (jika ada) — prepared (bukan raw concat)
+      $stmt2 = mysqli_prepare($koneksi, "UPDATE user SET user_password=? WHERE linked_siswa_id=?");
+      mysqli_stmt_bind_param($stmt2,'si',$hash,$sid); mysqli_stmt_execute($stmt2); mysqli_stmt_close($stmt2);
       $_SESSION['flash_success'] = 'Password siswa & akun terhubung berhasil di-reset.';
       header('Location: '.$SELF.'?tab=sekretaris'); exit;
     }

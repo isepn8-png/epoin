@@ -60,9 +60,9 @@ if ($removeFoto === 1) {
 // (Hash MD5 dipertahankan utk kompatibilitas login lama; migrasi bcrypt = Tahap 2)
 $pwHash = null;
 if ($resetDef === 1) {
-  $pwHash = md5('12345678');
+  $pwHash = password_hash('12345678', PASSWORD_DEFAULT);
 } else if (strlen($password) >= 5) {
-  $pwHash = md5($password);
+  $pwHash = password_hash($password, PASSWORD_DEFAULT);
 }
 
 // ===== legacy user_level dari role utama (perilaku DIPERTAHANKAN) — prepared =====
@@ -87,9 +87,16 @@ $selKeys       = array_map('strtolower', $roleKeys); // role_key terpilih (lower
 $meId          = (int)($_SESSION['id'] ?? 0);
 $iAmSuperadmin = in_array('superadmin', array_map('strtolower', (array)($_SESSION['roles'] ?? [])), true);
 
-// (a) Anti-eskalasi: hanya Super Admin yang boleh MEMBERIKAN peran superadmin
-if (in_array('superadmin', $selKeys, true) && !$iAmSuperadmin) {
-  die('Ditolak: hanya Super Admin yang dapat memberikan peran superadmin.');
+// cek apakah target saat ini memegang peran superadmin (cegah pencabutan oleh non-superadmin)
+$stmtSa = $koneksi->prepare("SELECT COUNT(*) c FROM user_roles ur JOIN roles r ON r.role_id=ur.role_id WHERE ur.user_id=? AND LOWER(r.role_key)='superadmin'");
+$stmtSa->bind_param("i", $id);
+$stmtSa->execute();
+$targetHasSuperadmin = (bool)$stmtSa->get_result()->fetch_assoc()['c'];
+$stmtSa->close();
+
+// (a) Anti-eskalasi: non-superadmin tidak boleh MEMBERI maupun MENCABUT peran superadmin
+if (!$iAmSuperadmin && (in_array('superadmin', $selKeys, true) || $targetHasSuperadmin)) {
+  die('Ditolak: hanya Super Admin yang dapat mengubah peran superadmin.');
 }
 
 // (b) Anti self-lockout: admin tidak boleh mencabut peran admin-nya sendiri

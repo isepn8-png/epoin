@@ -15,7 +15,7 @@ if (!epoin_csrf_validate()) {
 }
 
 $id       = (int) $_SESSION['id'];
-$password = md5((string) ($_POST['password'] ?? ''));
+$password = password_hash((string)($_POST['password'] ?? ''), PASSWORD_DEFAULT);
 
 // Update password — prepared statement (anti SQL injection)
 $stmt = mysqli_prepare($koneksi, 'UPDATE user SET user_password = ? WHERE user_id = ?');

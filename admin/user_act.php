@@ -56,7 +56,7 @@ if (strlen($password) < 5) {
 }
 
 // Hash password (kompatibel lama). Rekomendasi: migrasi ke password_hash() di sistem login.
-$pwHash = md5($password); // TODO: ganti ke password_hash() + verifikasi di login
+$pwHash = password_hash($password, PASSWORD_DEFAULT);
 
 try {
   // ----------------------------------------------------
