@@ -1,7 +1,7 @@
-<?php 
-include 'header.php';
-include '../koneksi.php';
-session_start();
+<?php
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_guard(true); // admin-only — WAJIB sebelum output apa pun
+include 'header.php';     // memuat koneksi.php ($koneksi) + sesi + render header
 
 // ==== util: cek apakah operator sekarang superadmin (opsional, sesuaikan session Anda)
 function is_superadmin() {
