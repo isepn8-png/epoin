@@ -74,7 +74,26 @@ if (!function_exists('load_user_roles')) {
     return $roles;
   }
 }
-if (!function_exists('load_user_permissions')) { function load_user_permissions($uid){ return []; } }
+if (!function_exists('load_user_permissions')) {
+  // FIX (Sub-fase 2): dulu return [] -> menimpa perms yang benar. Sekarang load asli dari DB.
+  // Catatan: auth.php (di-load di atas) sudah mendefinisikan versi kanonik; ini fallback defensif.
+  function load_user_permissions($uid){
+    global $koneksi;
+    $uid = (int)$uid; $perms = [];
+    if ($uid <= 0 || !($koneksi instanceof mysqli)) return $perms;
+    $sql = "SELECT DISTINCT p.perm_key FROM user_roles ur
+            JOIN role_permissions rp ON rp.role_id=ur.role_id
+            JOIN permissions p ON p.perm_id=rp.perm_id
+            WHERE ur.user_id=?";
+    if ($st = mysqli_prepare($koneksi,$sql)) {
+      mysqli_stmt_bind_param($st,'i',$uid); mysqli_stmt_execute($st);
+      $rs = mysqli_stmt_get_result($st);
+      while ($rs && ($row=mysqli_fetch_assoc($rs))) $perms[$row['perm_key']]=true;
+      mysqli_stmt_close($st);
+    }
+    return $perms;
+  }
+}
 if (!function_exists('user_has_role')) {
   function user_has_role($roleWanted){
     $roles = $_SESSION['roles'] ?? [];

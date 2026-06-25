@@ -81,6 +81,80 @@ function can($permKey){
   return !empty($_SESSION['perms'][$permKey] ?? false);
 }
 
+/* ===================== RBAC v2 — permission helpers (Sub-fase 2) =====================
+   Helper SIAP dipakai, TAPI belum dipasang ke menu/handler (itu Sub-fase 4-5).
+   Akses aplikasi masih 100% berbasis role seperti sekarang. */
+
+/** Muat set permission user dari DB = UNION semua role-nya. Return ['perm.key'=>true]. */
+if (!function_exists('load_user_permissions')) {
+  function load_user_permissions($uid){
+    global $koneksi;
+    $uid = (int)$uid; $perms = [];
+    if ($uid <= 0 || !($koneksi instanceof mysqli)) return $perms;
+    $sql = "SELECT DISTINCT p.perm_key
+            FROM user_roles ur
+            JOIN role_permissions rp ON rp.role_id = ur.role_id
+            JOIN permissions p       ON p.perm_id  = rp.perm_id
+            WHERE ur.user_id = ?";
+    if ($stmt = mysqli_prepare($koneksi, $sql)) {
+      mysqli_stmt_bind_param($stmt, 'i', $uid);
+      mysqli_stmt_execute($stmt);
+      $res = mysqli_stmt_get_result($stmt);
+      while ($res && ($row = mysqli_fetch_assoc($res))) { $perms[$row['perm_key']] = true; }
+      mysqli_stmt_close($stmt);
+    }
+    return $perms;
+  }
+}
+
+/** Apakah sesi saat ini SUPERADMIN? (wildcard akses penuh) */
+if (!function_exists('epoin_is_superadmin_session')) {
+  function epoin_is_superadmin_session(){
+    $roles = $_SESSION['roles'] ?? [];
+    if (is_array($roles)) {
+      foreach ($roles as $r) {
+        if (strtolower(str_replace([' ','-','_'],'',(string)$r)) === 'superadmin') return true;
+      }
+    }
+    return strtolower((string)($_SESSION['level'] ?? '')) === 'superadmin';
+  }
+}
+
+/** Cek 1 permission. Superadmin = selalu true (short-circuit). Baca cache $_SESSION['perms']. */
+if (!function_exists('epoin_can')) {
+  function epoin_can($permKey){
+    if (epoin_is_superadmin_session()) return true;            // wildcard
+    $perms = $_SESSION['perms'] ?? [];
+    return is_array($perms) && !empty($perms[(string)$permKey]);
+  }
+}
+
+/** True jika punya SALAH SATU permission. */
+if (!function_exists('epoin_can_any')) {
+  function epoin_can_any(array $keys){
+    if (epoin_is_superadmin_session()) return true;
+    foreach ($keys as $k) { if (epoin_can($k)) return true; }
+    return false;
+  }
+}
+
+/** True jika punya SEMUA permission. */
+if (!function_exists('epoin_can_all')) {
+  function epoin_can_all(array $keys){
+    if (epoin_is_superadmin_session()) return true;
+    foreach ($keys as $k) { if (!epoin_can($k)) return false; }
+    return true;
+  }
+}
+
+/** Refresh cache permission sesi (mis. dipanggil setelah matrix diubah). */
+if (!function_exists('epoin_refresh_session_perms')) {
+  function epoin_refresh_session_perms($uid){
+    $_SESSION['perms'] = load_user_permissions($uid);
+    return $_SESSION['perms'];
+  }
+}
+
 /* ===================== Guards ===================== */
 function ensure_logged_in($need_roles = null){
   if (!isset($_SESSION['id'])) { header('Location: '.APP_LOGIN_URL); exit; }
