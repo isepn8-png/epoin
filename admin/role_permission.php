@@ -148,12 +148,12 @@ include __DIR__ . '/header.php';
 .rp-search i{ position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8; }
 .btn-rp{ border:1px solid var(--rp-line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:600;font-size:13px;color:#334155; }
 .btn-rp:hover{ background:#eef4ff;color:var(--rp-blue-d); }
-.btn-rp-primary{ background:linear-gradient(90deg,var(--rp-blue-d),var(--rp-blue));color:#fff;border:0; box-shadow:0 8px 20px rgba(45,108,223,.25); }
+.btn-rp-primary{ background:linear-gradient(90deg,var(--rp-blue-d),var(--rp-blue));color:#fff;border:0;box-shadow:0 8px 20px rgba(45,108,223,.25); }
 .btn-rp-primary:hover{ filter:brightness(1.06);color:#fff; }
 .btn-rp-primary:disabled{ opacity:.5;cursor:not-allowed;box-shadow:none; }
 .dirty-badge{ display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;color:#b45309; }
 .dirty-badge.clean{ color:#64748b; }
-.dirty-dot{ width:9px;height:9px;border-radius:50%;background:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.18); }
+.dirty-dot{ width:9px;height:9px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.18); }
 .dirty-badge.clean .dirty-dot{ background:#cbd5e1;box-shadow:none; }
 
 .rp-legend{ display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px;font-size:12px;color:#475569;background:#fff;border-bottom:1px solid var(--rp-line); }
@@ -166,57 +166,75 @@ include __DIR__ . '/header.php';
 .sw-off{ background:#f1f5f9; }
 .sw-lock{ background:#eef2ff;border-color:#c7d2fe; }
 
-/* ----- Matrix ----- */
-.matrix-scroll{ overflow:auto; max-height:72vh; }
-table.matrix{ border-collapse:separate; border-spacing:0; width:max-content; min-width:100%; font-size:13px; }
-.matrix th,.matrix td{ border-bottom:1px solid #eef1f7; border-right:1px solid #eef1f7; background:#fff; }
-.matrix thead th{ position:sticky; top:0; z-index:5; }
-.matrix .sticky-left{ position:sticky; left:0; z-index:4; }
-.matrix thead th.corner{ left:0; z-index:7; background:#f1f6ff; min-width:300px;width:300px;text-align:left;padding:10px 14px;color:#1e293b;font-weight:800; }
-.matrix thead th.role-col{ z-index:5; }
+/* ----- Matrix layout (table-layout:fixed — kolom tidak melar) ----- */
+.matrix-scroll{ overflow-x:auto; overflow-y:auto; max-height:72vh; }
+table.matrix{ border-collapse:separate; border-spacing:0; table-layout:fixed; font-size:13px; }
 
-.role-col{ width:92px;min-width:92px;max-width:92px;vertical-align:bottom;padding:8px 4px;background:#f7faff;cursor:pointer;transition:background .15s; }
+/* Lebar kolom dikontrol via <colgroup> */
+table.matrix col.col-perm{ width:270px; }
+table.matrix col.col-role{ width:78px; }
+
+/* Garis grid */
+.matrix th,.matrix td{ border-bottom:1px solid #e8edf6; border-right:1px solid #e8edf6; box-sizing:border-box; background:#fff; }
+.matrix th:last-child,.matrix td:last-child{ border-right:none; }
+
+/* Sticky header atas */
+.matrix thead th{ position:sticky; top:0; z-index:5; }
+/* Sticky kolom kiri */
+.matrix .sticky-left{ position:sticky; left:0; z-index:4; background:#fff; }
+/* Corner = sticky atas + kiri */
+.matrix thead th.corner{ left:0; z-index:8; background:#f1f6ff; text-align:left; padding:10px 14px; color:#1e293b; font-weight:800; font-size:12px; }
+
+/* Header kolom role — seragam, tidak melar */
+.role-col{ vertical-align:bottom; text-align:center; padding:10px 3px 8px; cursor:pointer; transition:background .15s; background:#f7faff; overflow:hidden; }
 .role-col:hover{ background:#e9f1ff; }
-.role-col.is-super{ cursor:default;background:#f5f3ff; }
-.role-col .rn{ font-weight:700;color:#1e293b;font-size:11.5px;line-height:1.18;display:block;word-break:break-word; }
-.role-col .rk{ display:block;font-size:9.5px;color:#94a3b8;margin-top:2px;font-weight:600; }
-.role-col .sysbadge{ display:inline-block;margin-top:3px;font-size:8.5px;font-weight:800;color:#7c3aed;background:#ede9fe;border-radius:6px;padding:1px 5px; }
-.role-col .toggle-hint{ display:block;margin-top:4px;color:#94a3b8;font-size:10px; }
-.role-col.is-super .lockwrap{ display:block;margin-top:3px;color:#6366f1;font-size:10px;font-weight:700; }
+.role-col.is-super{ cursor:default; background:#f5f3ff; }
+.role-col .rn{ font-weight:700; color:#1e293b; font-size:11px; line-height:1.25; display:block; word-break:break-word; overflow-wrap:break-word; hyphens:auto; overflow:hidden; }
+.role-col .rk{ display:block; font-size:9px; color:#94a3b8; margin-top:2px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.role-col .sysbadge{ display:inline-block; margin-top:2px; font-size:8px; font-weight:800; color:#7c3aed; background:#ede9fe; border-radius:5px; padding:1px 4px; }
+.role-col .toggle-hint{ display:block; margin-top:4px; color:#94a3b8; font-size:9.5px; }
+.role-col.is-super .lockwrap{ display:block; margin-top:3px; color:#6366f1; font-size:9.5px; font-weight:700; }
 
 /* Group header row */
-tr.group-row .group-th{ position:sticky;left:0;z-index:4;background:#eef4ff;cursor:pointer;padding:9px 14px;font-weight:800;color:#1e3a8a;min-width:300px;width:300px; }
+tr.group-row .group-th{ position:sticky; left:0; z-index:4; background:#eef4ff; cursor:pointer; padding:9px 14px; font-weight:800; color:#1e3a8a; overflow:hidden; }
 tr.group-row .group-fill{ background:#eef4ff; }
-tr.group-row .group-th .chev{ transition:transform .2s; margin-right:8px;color:#3b82f6; }
+tr.group-row .group-th .chev{ transition:transform .2s; margin-right:8px; color:#3b82f6; }
 tr.group-row.open .group-th .chev{ transform:rotate(90deg); }
-tr.group-row .gcount{ font-weight:700;color:#3b82f6;font-size:11px;background:#fff;border-radius:999px;padding:1px 8px;margin-left:8px; }
+tr.group-row .gcount{ font-weight:700; color:#3b82f6; font-size:11px; background:#fff; border-radius:999px; padding:1px 8px; margin-left:8px; }
 
 /* Permission rows */
 tr.perm-row{ display:none; }
 tr.perm-row.show{ display:table-row; }
-.perm-th.sticky-left{ background:#fff;min-width:300px;width:300px;text-align:left;padding:8px 14px;color:#0f172a; }
-.perm-th .pname{ font-weight:600; }
-.perm-th code{ display:block;font-size:10.5px;color:#94a3b8;background:transparent;padding:0;margin-top:1px; }
-.ptype{ display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;font-size:10px;margin-right:8px;vertical-align:middle; }
-.ptype-menu{ color:var(--rp-blue);background:#e8f0fe; }
-.ptype-aksi{ color:var(--rp-amber);background:var(--rp-amber-bg); }
+tr.perm-row:hover td, tr.perm-row:hover th{ background:#f0f5ff !important; }
 
-.cell{ width:92px;text-align:center;padding:6px 0;transition:background .12s; }
+.perm-th.sticky-left{ background:#fff; text-align:left; padding:7px 14px; color:#0f172a; overflow:hidden; }
+.perm-th .pname{ font-weight:600; font-size:12.5px; }
+.perm-th code{ display:block; font-size:10px; color:#94a3b8; background:transparent; padding:0; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ptype{ display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:5px; font-size:9.5px; margin-right:6px; vertical-align:middle; flex-shrink:0; }
+.ptype-menu{ color:var(--rp-blue); background:#e8f0fe; }
+.ptype-aksi{ color:var(--rp-amber); background:var(--rp-amber-bg); }
+
+/* Sel data — checkbox tepat tengah */
+.cell{ text-align:center; vertical-align:middle; padding:5px 0; transition:background .12s; }
 .cell.granted{ background:var(--rp-green-bg); }
-.cell.locked{ background:#eef2ff;color:#6366f1; }
-.cell input[type=checkbox]{ width:17px;height:17px;cursor:pointer;accent-color:#16a34a;vertical-align:middle; }
+.cell.locked{ background:#eef2ff; color:#6366f1; }
+.cell input[type=checkbox]{ width:16px; height:16px; cursor:pointer; accent-color:#16a34a; display:block; margin:0 auto; }
 .cell.dirty{ box-shadow:inset 0 0 0 2px #f59e0b; }
 
 /* Role list (Tab 2) */
-.rolelist{ width:100%;font-size:13.5px; }
-.rolelist th{ background:#f7faff;color:#334155;border-bottom:2px solid var(--rp-line);padding:10px 12px;text-align:left; }
-.rolelist td{ border-bottom:1px solid #eef1f7;padding:10px 12px;vertical-align:middle; }
+.rolelist{ width:100%; font-size:13.5px; }
+.rolelist th{ background:#f7faff; color:#334155; border-bottom:2px solid var(--rp-line); padding:10px 12px; text-align:left; }
+.rolelist td{ border-bottom:1px solid #eef1f7; padding:10px 12px; vertical-align:middle; }
 .rolelist tr:hover td{ background:#f8fbff; }
-.chip{ display:inline-block;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:700; }
-.chip-sys{ background:#ede9fe;color:#7c3aed; }
-.chip-num{ background:#e8f0fe;color:#1d4ed8; }
-.chip-user{ background:#dcfce7;color:#15803d; }
-@media (max-width:768px){ .matrix thead th.corner,.perm-th.sticky-left,tr.group-row .group-th{ min-width:200px;width:200px; } }
+.chip{ display:inline-block; border-radius:999px; padding:2px 10px; font-size:11.5px; font-weight:700; }
+.chip-sys{ background:#ede9fe; color:#7c3aed; }
+.chip-num{ background:#e8f0fe; color:#1d4ed8; }
+.chip-user{ background:#dcfce7; color:#15803d; }
+
+@media (max-width:768px){
+  table.matrix col.col-perm{ width:200px; }
+  table.matrix col.col-role{ width:62px; }
+}
 </style>
 
 <div class="content-wrapper">
@@ -274,6 +292,10 @@ tr.perm-row.show{ display:table-row; }
 
             <div class="matrix-scroll">
               <table class="matrix">
+                <colgroup>
+                  <col class="col-perm">
+                  <?php foreach ($ROLES as $rid => $r): ?><col class="col-role"><?php endforeach; ?>
+                </colgroup>
                 <thead>
                   <tr>
                     <th class="corner">Permission \ Role</th>
