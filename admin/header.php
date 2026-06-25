@@ -982,6 +982,11 @@ $PAGE_TITLE = isset($PAGE_TITLE) && $PAGE_TITLE!=='' ? $PAGE_TITLE : 'Administra
                   <span class="pull-right-container"><small class="label pull-right bg-aqua"><?php echo $jumlah_admin; ?></small></span>
                 </a>
               </li>
+              <li role="treeitem">
+                <a href="role_permission.php" title="Role &amp; Hak Akses" aria-label="Role dan Hak Akses">
+                  <span class="menu-ic"><i class="fa-solid fa-user-shield"></i></span> <span class="menu-text">Role &amp; Hak Akses</span>
+                </a>
+              </li>
             </ul>
           </li>
           <?php endif; ?>
