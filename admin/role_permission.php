@@ -125,6 +125,13 @@ $GROUPS = [
 $byGroup = [];
 foreach ($PERMS as $pid => $p) { $byGroup[$p['perm_group']][] = $pid; }
 
+// Lebar kolom matrix (HARUS sinkron dengan CSS .col-perm / .col-role di bawah).
+// table-layout:fixed butuh width tabel eksplisit = jumlah lebar kolom,
+// kalau tidak (width:auto) thead & tbody bisa menghitung lebar berbeda → checkbox geser.
+$COL_PERM_W   = 270; // kolom nama permission (sticky kiri)
+$COL_ROLE_W   = 78;  // tiap kolom role
+$MATRIX_WIDTH = $COL_PERM_W + (count($ROLES) * $COL_ROLE_W);
+
 $PAGE_TITLE = 'Manajemen Role & Permission';
 include __DIR__ . '/header.php';
 ?>
@@ -230,11 +237,7 @@ tr.perm-row:hover td, tr.perm-row:hover th{ background:#f0f5ff !important; }
 .chip-sys{ background:#ede9fe; color:#7c3aed; }
 .chip-num{ background:#e8f0fe; color:#1d4ed8; }
 .chip-user{ background:#dcfce7; color:#15803d; }
-
-@media (max-width:768px){
-  table.matrix col.col-perm{ width:200px; }
-  table.matrix col.col-role{ width:62px; }
-}
+/* Layar kecil: lebar kolom tetap (di-set inline pada <col>), scroll horizontal menangani. */
 </style>
 
 <div class="content-wrapper">
@@ -291,10 +294,10 @@ tr.perm-row:hover td, tr.perm-row:hover th{ background:#f0f5ff !important; }
             </div>
 
             <div class="matrix-scroll">
-              <table class="matrix">
+              <table class="matrix" style="width:<?= (int)$MATRIX_WIDTH ?>px">
                 <colgroup>
-                  <col class="col-perm">
-                  <?php foreach ($ROLES as $rid => $r): ?><col class="col-role"><?php endforeach; ?>
+                  <col class="col-perm" style="width:<?= (int)$COL_PERM_W ?>px">
+                  <?php foreach ($ROLES as $rid => $r): ?><col class="col-role" style="width:<?= (int)$COL_ROLE_W ?>px"><?php endforeach; ?>
                 </colgroup>
                 <thead>
                   <tr>
