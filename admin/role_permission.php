@@ -211,7 +211,9 @@ tr.group-row .gcount{ font-weight:700; color:#3b82f6; font-size:11px; background
 
 /* Permission rows */
 tr.perm-row{ display:none; }
-tr.perm-row.show{ display:table-row; }
+/* Class 'rp-show' (BUKAN 'show'): Bootstrap 3 punya utility .show{display:block!important}
+   yang menimpa display:table-row dan bikin sel tbody lepas dari grid (checkbox geser kiri). */
+tr.perm-row.rp-show{ display:table-row; }
 tr.perm-row:hover td, tr.perm-row:hover th{ background:#f0f5ff !important; }
 
 .perm-th.sticky-left{ background:#fff; text-align:left; padding:7px 14px; color:#0f172a; overflow:hidden; }
@@ -482,7 +484,7 @@ tr.perm-row:hover td, tr.perm-row:hover th{ background:#f0f5ff !important; }
   function setGroup(groupRow, open){
     groupRow.classList.toggle('open', open);
     var g = groupRow.dataset.group;
-    document.querySelectorAll('tr.perm-row.grp-'+g).forEach(function(tr){ tr.classList.toggle('show', open); });
+    document.querySelectorAll('tr.perm-row.grp-'+g).forEach(function(tr){ tr.classList.toggle('rp-show', open); });
   }
   document.querySelectorAll('tr.group-row').forEach(function(gr){
     gr.addEventListener('click', function(){ setGroup(gr, !gr.classList.contains('open')); });
@@ -499,7 +501,7 @@ tr.perm-row:hover td, tr.perm-row:hover th{ background:#f0f5ff !important; }
   searchEl.addEventListener('input', function(){
     var q = this.value.trim().toLowerCase();
     if (!q){
-      document.querySelectorAll('tr.perm-row').forEach(function(tr){ tr.style.display=''; tr.classList.remove('show'); });
+      document.querySelectorAll('tr.perm-row').forEach(function(tr){ tr.style.display=''; tr.classList.remove('rp-show'); });
       document.querySelectorAll('tr.group-row').forEach(function(gr){ setGroup(gr, false); gr.style.display=''; });
       return;
     }
@@ -507,7 +509,7 @@ tr.perm-row:hover td, tr.perm-row:hover th{ background:#f0f5ff !important; }
     document.querySelectorAll('tr.perm-row').forEach(function(tr){
       var hit = tr.dataset.name.indexOf(q) !== -1;
       tr.style.display = hit ? 'table-row' : 'none';
-      tr.classList.toggle('show', hit);
+      tr.classList.toggle('rp-show', hit);
       if (hit) groupHit[tr.dataset.group] = true;
     });
     document.querySelectorAll('tr.group-row').forEach(function(gr){
