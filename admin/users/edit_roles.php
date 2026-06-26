@@ -2,7 +2,9 @@
 require_once __DIR__ . '/../../includes/auth.php';            // $koneksi + RBAC helpers
 require_once __DIR__ . '/../../includes/epoin_security.php';  // CSRF helpers
 ensure_logged_in();
-if (!user_has_any_role(['administrator','superadmin'])) { http_response_code(403); exit('Akses ditolak'); }
+// [SECURITY H-1/C-1] Kelola role = SUPERADMIN-ONLY. Mencegah administrator non-super
+// meng-assign role (termasuk superadmin) ke user mana pun → eskalasi privilege.
+if (!epoin_is_superadmin_session()) { http_response_code(403); exit('Akses ditolak: khusus Super Admin'); }
 
 $uid = isset($_GET['uid']) ? (int)$_GET['uid'] : 0;
 

@@ -17,6 +17,18 @@ require_once __DIR__ . '/../koneksi.php';
 // ---- Guard admin-only (redirect non-admin / belum login) ----
 $ME = epoin_staff_guard(true);
 
+// [SECURITY H-1] Kelola role & akses = SUPERADMIN-ONLY (selaras desain master.user.role_manage).
+// AJAX → JSON 403; halaman → redirect. Mencegah administrator non-super menulis ulang matrix.
+if (!epoin_is_superadmin_session()) {
+  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => false, 'msg' => 'Khusus Super Admin']); exit;
+  }
+  epoin_flash_error('Akses ditolak: kelola role & akses khusus Super Admin.');
+  header('Location: index.php'); exit;
+}
+
 // ===================== Load master data (untuk render + validasi AJAX) =====================
 $ROLES = [];
 $rsR = mysqli_query($koneksi,
