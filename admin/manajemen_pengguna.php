@@ -111,6 +111,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     $selected = array_map('intval', $_POST['roles'] ?? []);
 
+    // [SECURITY C-1] Hanya SUPERADMIN yang boleh memberi/mengubah keanggotaan role superadmin.
+    // Tanpa ini, administrator/tas bisa meng-assign superadmin ke dirinya → eskalasi penuh.
+    $superRow  = q1($koneksi, "SELECT role_id FROM roles WHERE role_key='superadmin' LIMIT 1");
+    $superRid  = $superRow ? (int)$superRow['role_id'] : 0;
+    $touchSuper = ($superRid && in_array($superRid, $selected, true)) || $isSuperadmin($uid);
+    if ($touchSuper && !epoin_is_superadmin_session()) {
+      echo json_encode(['ok'=>false,'msg'=>'Hanya Super Admin yang boleh mengelola role Super Admin']); exit;
+    }
+
     if ($isSuperadmin($uid) && $countSuperadmin() === 1) {
       $hasSuper = false;
       if ($selected) {
