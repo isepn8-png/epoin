@@ -48,6 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ins->close();
   }
 
+  // [M-1] keanggotaan role user berubah → invalidasi cache perms global.
+  if (function_exists('epoin_rbac_bump_version')) { epoin_rbac_bump_version(); }
+
   header("Location: index.php");
   exit;
 }

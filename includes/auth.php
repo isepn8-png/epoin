@@ -155,6 +155,67 @@ if (!function_exists('epoin_refresh_session_perms')) {
   }
 }
 
+/* ===================== RBAC cache-version stamp (M-1, blueprint §5.2) =====================
+   Invalidasi cache perms/roles di session saat matrix / keanggotaan role berubah.
+   Mekanisme: 1 baris di tabel `app_meta` (key 'rbac_version'). Setiap mutasi role/permission
+   memanggil epoin_rbac_bump_version(); tiap request memanggil epoin_sync_session_perms()
+   yang reload HANYA bila versi global != versi yang tersimpan di session.
+   Aman bila tabel `app_meta` belum ada (VPS belum migrasi) → fallback ke perilaku lama. */
+
+/** Baca rbac_version global (1 query ringan, di-cache per-request). 0 = tabel belum ada. */
+if (!function_exists('epoin_rbac_version')) {
+  function epoin_rbac_version(){
+    global $koneksi;
+    static $cached = null;                 // cek versi cukup 1x per request
+    if ($cached !== null) return $cached;
+    $cached = 0;
+    if (!($koneksi instanceof mysqli)) return $cached;
+    try {
+      if ($res = @mysqli_query($koneksi, "SELECT meta_value FROM app_meta WHERE meta_key='rbac_version' LIMIT 1")) {
+        if ($row = mysqli_fetch_assoc($res)) $cached = (int)$row['meta_value'];
+        mysqli_free_result($res);
+      }
+    } catch (\Throwable $e) { $cached = 0; }  // tabel belum ada → fallback aman
+    return $cached;
+  }
+}
+
+/** Naikkan rbac_version global. Panggil setelah role/permission/keanggotaan-role berubah. */
+if (!function_exists('epoin_rbac_bump_version')) {
+  function epoin_rbac_bump_version(){
+    global $koneksi;
+    if (!($koneksi instanceof mysqli)) return false;
+    try {
+      return @mysqli_query($koneksi,
+        "INSERT INTO app_meta (meta_key, meta_value) VALUES ('rbac_version','1')
+         ON DUPLICATE KEY UPDATE meta_value = CAST(meta_value AS UNSIGNED) + 1");
+    } catch (\Throwable $e) { return false; }  // tabel belum ada → diam (tak boleh ganggu handler)
+  }
+}
+
+/** Sinkronkan cache perms/roles session dgn rbac_version global. Reload HANYA bila versi beda. */
+if (!function_exists('epoin_sync_session_perms')) {
+  function epoin_sync_session_perms($uid){
+    $uid = (int)$uid;
+    if ($uid <= 0) return;
+    $global  = epoin_rbac_version();
+    $have    = array_key_exists('perms_ver', $_SESSION) ? (int)$_SESSION['perms_ver'] : PHP_INT_MIN;
+    $missing = !isset($_SESSION['perms']) || !is_array($_SESSION['perms'])
+            || !isset($_SESSION['roles']) || !is_array($_SESSION['roles']) || empty($_SESSION['roles']);
+
+    // VPS belum migrasi (versi 0): pertahankan perilaku lama (load sekali bila kosong).
+    if ($global === 0 && !$missing) return;
+
+    if ($have !== $global || $missing) {
+      $_SESSION['perms'] = load_user_permissions($uid);
+      if (function_exists('load_user_roles')) {
+        $_SESSION['roles'] = load_user_roles($uid);   // role membership juga bisa berubah
+      }
+      $_SESSION['perms_ver'] = $global;
+    }
+  }
+}
+
 /* ===================== Guards ===================== */
 function ensure_logged_in($need_roles = null){
   if (!isset($_SESSION['id'])) { header('Location: '.APP_LOGIN_URL); exit; }
@@ -196,6 +257,9 @@ function bootstrap_rbac_for_user_id($user_id){
   // perms sebagai set
   $_SESSION['perms'] = [];
   foreach ($perms_arr as $pk) { $_SESSION['perms'][$pk] = true; }
+
+  // [M-1] stempel versi RBAC saat login → hindari reload berlebih di request pertama.
+  if (function_exists('epoin_rbac_version')) { $_SESSION['perms_ver'] = epoin_rbac_version(); }
 
   return true;
 }

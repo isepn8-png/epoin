@@ -134,6 +134,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     foreach ($selected as $rid) {
       mysqli_query($koneksi,"INSERT INTO user_roles (user_id, role_id) VALUES (".(int)$uid.", ".(int)$rid.")");
     }
+    // [M-1] keanggotaan role user berubah → invalidasi cache perms global.
+    if (function_exists('epoin_rbac_bump_version')) { epoin_rbac_bump_version(); }
     echo json_encode(['ok'=>true]); exit;
   }
 
@@ -216,6 +218,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
           mysqli_query($koneksi, "INSERT IGNORE INTO user_roles(user_id,role_id) VALUES(".(int)$userId.",".(int)$ROLE_SEKRETARIS.")");
 
           mysqli_commit($koneksi);
+          // [M-1] role sekretaris ditambahkan → invalidasi cache perms global.
+          if (function_exists('epoin_rbac_bump_version')) { epoin_rbac_bump_version(); }
           $_SESSION['flash_success'] = 'Sekretaris ditetapkan.';
         } catch (Throwable $e){ mysqli_rollback($koneksi); $_SESSION['flash_error']='Gagal menetapkan sekretaris: '.$e->getMessage(); }
       }
@@ -231,6 +235,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
           mysqli_query($koneksi, "DELETE FROM user_roles WHERE user_id=".(int)$uid." AND role_id=".(int)$ROLE_SEKRETARIS);
           mysqli_query($koneksi, "DELETE FROM sekolah_staff WHERE posisi_key='sekretaris' AND user_id=".(int)$uid);
           mysqli_commit($koneksi);
+          // [M-1] role sekretaris dicabut → invalidasi cache perms global.
+          if (function_exists('epoin_rbac_bump_version')) { epoin_rbac_bump_version(); }
           $_SESSION['flash_success']='Role Sekretaris dicabut.';
         }catch(Throwable $e){ mysqli_rollback($koneksi); $_SESSION['flash_error']='Gagal mencabut: '.$e->getMessage(); }
       }

@@ -150,8 +150,14 @@ if (!function_exists('_is_only_piket')) {
   }
 }
 
-if (empty($_SESSION['roles'])) { $_SESSION['roles'] = load_user_roles($user_id); }
-if (empty($_SESSION['perms'])) { $_SESSION['perms'] = load_user_permissions($user_id); }
+// [M-1] Sinkronkan cache perms/roles dgn rbac_version global: reload HANYA bila versi berubah
+// (mis. admin baru saja mengubah matrix/role). Tanpa logout. Fallback ke perilaku lama bila helper absen.
+if (function_exists('epoin_sync_session_perms')) {
+  epoin_sync_session_perms($user_id);
+} else {
+  if (empty($_SESSION['roles'])) { $_SESSION['roles'] = load_user_roles($user_id); }
+  if (empty($_SESSION['perms'])) { $_SESSION['perms'] = load_user_permissions($user_id); }
+}
 
 /* =======================================================================
    [FIX-LEVEL-BRIDGE] — JEMBATAN KOMPATIBILITAS UNTUK HALAMAN LAMA

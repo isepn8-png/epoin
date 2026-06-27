@@ -9,6 +9,7 @@ if (!epoin_csrf_validate()) {             // validasi CSRF (tanpa argumen)
     epoin_csrf_fail_redirect('manajemen_pengguna.php');
 }
 include '../koneksi.php';
+require_once __DIR__ . '/../includes/auth.php';   // [M-1] sediakan epoin_rbac_bump_version()
 
 $id         = (int)($_POST['id'] ?? 0);
 $nama       = trim($_POST['nama'] ?? '');
@@ -126,6 +127,9 @@ foreach ($ids as $rid) {
   $ins->execute();
 }
 $ins->close();
+
+// [M-1] keanggotaan role user berubah → invalidasi cache perms global.
+if (function_exists('epoin_rbac_bump_version')) { epoin_rbac_bump_version(); }
 
 header("Location: " . $redirect . "?msg=updated");
 exit;

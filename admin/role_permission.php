@@ -87,9 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
     mysqli_stmt_close($ins); mysqli_stmt_close($del);
 
-    // Jaga konsistensi cache: refresh perms sesi admin yang sedang login.
+    // [M-1] Matrix berubah → bump rbac_version global agar SEMUA user (yg sedang login)
+    // memuat ulang perms di request berikutnya tanpa logout.
+    if (function_exists('epoin_rbac_bump_version')) { epoin_rbac_bump_version(); }
+
+    // Jaga konsistensi cache: refresh perms sesi admin yang sedang login (+ stempel versi baru).
     if (function_exists('epoin_refresh_session_perms')) {
       epoin_refresh_session_perms((int)($_SESSION['id'] ?? 0));
+      if (function_exists('epoin_rbac_version')) { $_SESSION['perms_ver'] = epoin_rbac_version(); }
     }
 
     // Hitung ulang jumlah permission per role (untuk update badge UI).

@@ -6,6 +6,7 @@ if (!epoin_csrf_validate()) {
     epoin_csrf_fail_redirect('user_tambah.php');
 }
 include '../koneksi.php';
+require_once __DIR__ . '/../includes/auth.php';   // [M-1] sediakan epoin_rbac_bump_version()
 
 // ----------------------------------------------------
 // Konfigurasi umum
@@ -175,6 +176,8 @@ try {
       $ins->bind_param("ii", $newUserId, $rid);
       $ins->execute();
     }
+    // [M-1] user baru dgn role → invalidasi cache perms global (konsistensi; user ini login fresh).
+    if (function_exists('epoin_rbac_bump_version')) { epoin_rbac_bump_version(); }
   }
   // Catatan: jika tidak ada role_id valid (misal fallback tanpa tabel roles),
   // lewati pengisian user_roles agar tidak error constraint.

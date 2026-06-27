@@ -52,8 +52,8 @@ function find_or_create_user_for_siswa($siswa_id){
   global $koneksi; return [(int)mysqli_insert_id($koneksi),"OK (akun staf baru: {$uname})"];
 }
 function role_id($key){ $r=one("SELECT role_id FROM roles WHERE role_key='".esc(strtolower($key))."' LIMIT 1"); return $r?(int)$r['role_id']:0; }
-function assign_role($uid,$key){ $rid=role_id($key); return $rid? qr("INSERT IGNORE INTO user_roles(user_id,role_id) VALUES(".i($uid).",$rid)") : false; }
-function revoke_role($uid,$key){ $rid=role_id($key); return $rid? qr("DELETE FROM user_roles WHERE user_id=".i($uid)." AND role_id=$rid") : false; }
+function assign_role($uid,$key){ $rid=role_id($key); if(!$rid) return false; $r=qr("INSERT IGNORE INTO user_roles(user_id,role_id) VALUES(".i($uid).",$rid)"); if($r && function_exists('epoin_rbac_bump_version')) epoin_rbac_bump_version(); return $r; }
+function revoke_role($uid,$key){ $rid=role_id($key); if(!$rid) return false; $r=qr("DELETE FROM user_roles WHERE user_id=".i($uid)." AND role_id=$rid"); if($r && function_exists('epoin_rbac_bump_version')) epoin_rbac_bump_version(); return $r; }
 function sync_password_from_siswa($uid){
   $u=one("SELECT linked_siswa_id FROM `user` WHERE user_id=".i($uid)." LIMIT 1");
   if(!$u||!$u['linked_siswa_id']) return [false,"Akun staf tidak tertaut ke siswa"];
