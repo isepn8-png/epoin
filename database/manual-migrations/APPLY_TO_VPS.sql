@@ -360,6 +360,23 @@ INSERT IGNORE INTO `role_permissions` (`role_id`,`perm_id`)
 -- siswa: tanpa permission (dikelola portal siswa).
 
 -- ============================================================
+--  BLOK 7 — RBAC M-1: cache-version stamp (app_meta.rbac_version)
+--  Acuan   : docs/BLUEPRINT_RBAC.md §5.2 ; docs/AUDIT_RBAC.md M-1
+--  Fungsi  : invalidasi cache perms di session saat matrix/role berubah,
+--            tanpa user harus logout. WAJIB sebelum enforcement (Sub-fase 4-5).
+--  Idempotent: CREATE TABLE IF NOT EXISTS + INSERT ON DUPLICATE no-op.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `app_meta` (
+  `meta_key`   VARCHAR(64)  NOT NULL,
+  `meta_value` VARCHAR(255) NOT NULL DEFAULT '',
+  `updated_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`meta_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `app_meta` (`meta_key`, `meta_value`) VALUES ('rbac_version', '1')
+  ON DUPLICATE KEY UPDATE `meta_key` = `meta_key`;
+
+-- ============================================================
 --  VERIFIKASI — jalankan setelah semua blok di atas
 -- ============================================================
 --
@@ -395,6 +412,10 @@ INSERT IGNORE INTO `role_permissions` (`role_id`,`perm_id`)
 --      FROM roles r LEFT JOIN role_permissions rp ON rp.role_id=r.role_id
 --      GROUP BY r.role_id ORDER BY r.sort_order;
 --      -- superadmin = 67 (wildcard), siswa = 0.
+--
+-- 7. Pastikan app_meta + rbac_version ada (RBAC M-1):
+--    SELECT meta_key, meta_value FROM app_meta WHERE meta_key='rbac_version';
+--    → Harus mengembalikan 1 baris (nilai >= 1).
 --
 -- ============================================================
 --  SELESAI
