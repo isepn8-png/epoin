@@ -29,13 +29,13 @@
 **Bukti kode:** satu-satunya gate adalah blok `if ($isSuperadmin($uid) && $countSuperadmin() === 1)` (mencegah penghapusan super terakhir) — tidak ada gate untuk **penambahan** super oleh non-super.
 **Rekomendasi (patch tertarget, aman, tanpa mengganggu kelola role normal):**
 > Jika aktor **bukan** superadmin (`epoin_is_superadmin_session()` == false), TOLAK request bila: (a) selection menyertakan role `superadmin`, ATAU (b) target user saat ini punya role superadmin. Hanya superadmin yang boleh mencetak/mengubah keanggotaan superadmin. Terapkan di `save_user_roles` DAN `edit_roles.php`.
-**Status:** ✅ **DI-FIX** (2026-06-27). `manajemen_pengguna.php` `save_user_roles`: blok bila menyentuh role superadmin (assign/target) & aktor bukan superadmin. `edit_roles.php`: guard dijadikan superadmin-only (lihat H-1). php -l 0 error; **runtime test vs DB pending** (MySQL lokal mati).
+**Status:** ✅ **DI-FIX & VERIFIED RUNTIME** (2026-06-27). `manajemen_pengguna.php` `save_user_roles`: blok bila menyentuh role superadmin (assign/target) & aktor bukan superadmin. `edit_roles.php`: guard dijadikan superadmin-only (lihat H-1). 5/5 test C-1 PASS (tas/admin ditolak; superadmin asli tetap bisa assign).
 
 ### 🟠 H-1 — Tools kelola role/akses tidak superadmin-only (High)
 **Lokasi:** `admin/role_permission.php:18` (`epoin_staff_guard(true)` = admin-only), `admin/users/edit_roles.php:5`, `admin/manajemen_pengguna.php:19`.
 **Dampak:** BLUEPRINT §4.1 menetapkan `master.user.role_manage` (kelola role & akses) **hanya superadmin** (kolom admin = tidak dicentang). Faktanya Matrix UI + assignment role bisa diakses **administrator** (bahkan `tas` utk manajemen_pengguna). Seorang administrator non-super bisa menulis ulang matrix permission seluruh role. **Sekarang** (enforcement off) dampak = perubahan DATA saja (bisa diperbaiki super). **Pasca-enforcement** = bypass kebijakan akses (admin mengatur izin yang seharusnya domain superadmin).
 **Rekomendasi:** Sebelum Sub-fase 4–5, ganti guard tools kelola role menjadi superadmin-only (`epoin_is_superadmin_session()`), atau gate `epoin_can('master.user.role_manage')` (yang by design hanya super). Selaras dengan blueprint.
-**Status:** ✅ **DI-FIX** (2026-06-27). `role_permission.php` & `edit_roles.php` kini **superadmin-only** (`epoin_is_superadmin_session()`); AJAX matrix utk non-super → JSON 403 (sekaligus menutup L-1). `manajemen_pengguna.php` tetap admin/`tas` untuk kelola user umum, namun boundary superadmin dilindungi C-1.
+**Status:** ✅ **DI-FIX & VERIFIED RUNTIME** (2026-06-27). `role_permission.php` & `edit_roles.php` kini **superadmin-only** (`epoin_is_superadmin_session()`); AJAX matrix utk non-super → JSON 403 (sekaligus menutup L-1). `manajemen_pengguna.php` tetap admin/`tas` untuk kelola user umum, namun boundary superadmin dilindungi C-1. 8/8 test H-1 PASS (admin/tas ditolak; superadmin diizinkan, termasuk POST AJAX).
 
 ### 🟡 M-1 — Stale permission cache tanpa invalidasi versi (Medium)
 **Lokasi:** `admin/header.php:154` — `if (empty($_SESSION['perms'])) { $_SESSION['perms'] = load_user_permissions($user_id); }`.
@@ -77,25 +77,34 @@
 
 ---
 
-## 4. INTEGRITAS DATA (BAGIAN 3) — ⏳ PENDING (MySQL lokal mati)
+## 4. INTEGRITAS DATA (BAGIAN 3) — ✅ CLEAN (2026-06-27)
 
-Saat audit, **MySQL lokal tidak berjalan** (port 3308 & 3306 menolak koneksi; tidak ada `.env`, default `epoin_local`). Pemeriksaan live (orphan, FK, konsistensi seed 13 role / 67 perm / 275 mapping, superadmin 0-perm, permission yatim, role `siswa`) **belum dapat dieksekusi**.
+MySQL dinyalakan & skrip `scratchpad/rbac_audit.php` dieksekusi. Semua check **bersih**:
 
-Skrip siap-jalan tersedia: `scratchpad/rbac_audit.php` (read-only; query counts, roles, orphan `role_permissions`/`user_roles`, FK `DELETE_RULE`, dup keys, dll). Jalankan setelah MySQL hidup:
-```
-php scratchpad/rbac_audit.php
-```
-Hal yang harus dikonfirmasi saat DB hidup:
-1. `role_permissions` tak menunjuk `role_id`/`perm_id` yatim; FK aktif & (idealnya) `ON DELETE CASCADE`.
-2. Superadmin: 0 baris perm itu **by design** (wildcard) — bukan bug. Pastikan `epoin_is_superadmin_session` tetap satu-satunya sumber kebenaran.
-3. Permission yatim (tak ter-assign role mana pun): bukan masalah keamanan, tapi indikasi matrix default belum lengkap.
-4. Role `siswa` = pseudo-role penanda (0 perm, enforcement siswa di portal terpisah via `level='siswa'`); pastikan tidak ada user staf yang keliru dapat role `siswa`.
+| Check | Hasil |
+|---|---|
+| Jumlah roles | **13** ✅ |
+| Jumlah permissions | **67** ✅ |
+| Jumlah mappings (role_permissions) | **275** ✅ |
+| Orphan role_permissions → roles | **0** ✅ |
+| Orphan role_permissions → permissions | **0** ✅ |
+| Orphan user_roles → roles | **0** ✅ |
+| Permission tanpa role | **0** ✅ |
+| FK role_permissions.role_id | `CASCADE` ✅ |
+| FK role_permissions.perm_id | `CASCADE` ✅ |
+| Duplikat role_key | **0** ✅ |
+| Duplikat perm_key | **0** ✅ |
+| Role siswa: perm | **0** ✅ (by design) |
+| Role siswa: user | **0** ✅ (tidak ada staf salah-role) |
+| Staf level='siswa' di user_roles | **0** ✅ |
+
+**Catatan data:** Superadmin mempunyai **67 baris** di `role_permissions` (bukan 0 seperti asumsi awal audit). Ini tidak mengubah keamanan — `epoin_can()` short-circuit via `epoin_is_superadmin_session()` independen dari `role_permissions`. Baris tersebut kemungkinan hasil seed `INSERT ALL perms` ke superadmin; tidak berbahaya.
 
 ---
 
 ## 5. SUDAH DI-FIX vs MENUNGGU KONFIRMASI
 - **Sudah benar (tidak perlu fix):** handler `save_matrix` (auth/CSRF/SQL/superadmin-lock), `epoin_can` wildcard, `load_user_permissions` (header sudah diperbaiki), enforcement OFF.
-- **Sudah di-fix (2026-06-27, disetujui Bos):** C-1 (Critical) & H-1 (High) — patch tertarget, php -l 0 error, runtime test vs DB pending (MySQL lokal mati).
+- **Sudah di-fix & diverifikasi runtime (2026-06-27):** C-1 (Critical) & H-1 (High) — patch tertarget, php -l 0 error, **13/13 runtime tests PASS** (DB hidup; semua skenario bypass ditolak; superadmin tetap bisa akses normal).
 - **Untuk Sub-fase berikut:** M-1 (rbac_version), M-2 (cakupan tas), Low items (kecuali L-1 yang ikut tertutup oleh H-1).
 
 ---
