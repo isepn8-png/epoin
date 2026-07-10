@@ -13,6 +13,52 @@ $levelActive        = isset($levelActive)        ? (int)$levelActive        : 0;
 $negSaldo           = isset($negSaldo)           ? (int)$negSaldo           : 0;
 $saldo              = isset($saldo)              ? (int)$saldo              : 0;
 $jenjang_nama_siswa = isset($jenjang_nama_siswa) ? htmlspecialchars(trim((string)$jenjang_nama_siswa), ENT_QUOTES, 'UTF-8') : '';
+
+/* ===== Tahapan pembinaan dari konfigurasi ambang SP (fleksibel, tidak hardcode) ===== */
+require_once __DIR__ . '/epoin_sp_helpers.php';
+$__kon = $GLOBALS['koneksi'] ?? ($koneksi ?? null);
+$__spStages = epoin_sp_stages($__kon instanceof mysqli ? $__kon : null);
+
+// Deskripsi kaya utk level standar; fallback generik utk level tambahan (SP5+).
+$__spDesc = [
+  'SP1' => ['sub'=>'Peringatan <strong>SP1</strong> & pendampingan wali kelas. Evaluasi perilaku dan komitmen perbaikan.','tindakan'=>'SP1 tertulis & pertemuan singkat dengan orang tua.','tujuan'=>'Kolaborasi sekolah–orang tua untuk menghentikan pelanggaran berulang.','catatan'=>'Monitoring perilaku selama periode tertentu.'],
+  'SP2' => ['sub'=>'Peringatan <strong>SP2</strong> & rencana perbaikan terukur bersama guru/BK.','tindakan'=>'SP2 & rencana perbaikan (action plan) bersama wali kelas/BK.','tujuan'=>'Perubahan perilaku berkelanjutan dengan target yang terukur.','catatan'=>'Evaluasi berkala dan penilaian kemajuan.'],
+  'SP3' => ['sub'=>'Pembinaan <strong>khusus terpadu</strong> dengan guru/BK, pemantauan ketat & komunikasi orang tua.','tindakan'=>'SP3 & program pembinaan terstruktur (coaching/konseling intensif).','tujuan'=>'Koreksi menyeluruh dengan pengawasan ketat.','catatan'=>'Pelanggaran lanjutan berisiko naik ke tingkat berikutnya.'],
+  'SP4' => ['sub'=>'Sidang/konferensi pembinaan sekolah & rekomendasi tindakan. <strong>Monitoring harian</strong>.','tindakan'=>'SP4, konferensi kasus, penetapan sanksi tegas.','tujuan'=>'Keputusan tindak lanjut terakhir sebelum pemulangan.','catatan'=>'Dampak akademik bisa terjadi (mis. tidak naik kelas).'],
+];
+
+$__jenjangTiers = [[
+  'label'=>'Aman','range'=>'0 poin negatif','sp'=>null,'spCls'=>'','prog'=>'Apresiasi / Monitoring','color'=>'#22c55e',
+  'sub'=>'Saldo poin aman. Tidak ada tindakan pembinaan yang diperlukan saat ini.',
+  'tindakan'=>'Tidak ada tindakan pembinaan. Kondisi ini mencerminkan perilaku baik.',
+  'tujuan'=>'Menjaga saldo poin tetap positif dan terus meningkatkan prestasi.',
+  'catatan'=>'Poin prestasi dapat terus meningkatkan saldo positif.',
+]];
+foreach ($__spStages as $__st) {
+  $__sp = $__st['sp'];
+  $__n  = $__sp ? (int)substr((string)$__sp, 2) : 0;
+  $__rangeTxt = ((int)$__st['max'] >= 999999)
+      ? ('≥' . (int)$__st['min'] . ' poin negatif')
+      : ((int)$__st['min'] . '–' . (int)$__st['max'] . ' poin negatif');
+  $__d = ($__sp && isset($__spDesc[$__sp])) ? $__spDesc[$__sp] : [
+      'sub'      => $__sp ? ('Peringatan <strong>' . $__sp . '</strong> & pembinaan sesuai kebijakan sekolah.') : 'Teguran & pembinaan umum. Fokus pembiasaan perilaku baik.',
+      'tindakan' => (string)$__st['action'],
+      'tujuan'   => 'Perbaikan perilaku & pencegahan pelanggaran berulang.',
+      'catatan'  => 'Seluruh proses terdokumentasi dalam sistem.',
+  ];
+  $__jenjangTiers[] = [
+    'label'   => 'Tingkat ' . $__st['roman'],
+    'range'   => $__rangeTxt,
+    'sp'      => $__sp,
+    'spCls'   => $__sp ? ('jst-chip-sp' . min(max($__n, 1), 4)) : '',
+    'prog'    => (string)$__st['program'],
+    'color'   => (string)$__st['color'],
+    'sub'     => $__d['sub'],
+    'tindakan'=> $__d['tindakan'],
+    'tujuan'  => $__d['tujuan'],
+    'catatan' => $__d['catatan'],
+  ];
+}
 ?>
 <style>
 /* =========================================================
@@ -280,50 +326,8 @@ $jenjang_nama_siswa = isset($jenjang_nama_siswa) ? htmlspecialchars(trim((string
 
   var ACTIVE = <?php echo (int)$levelActive; ?>;
 
-  var D = [
-    { label:'Aman', range:'0 poin negatif', sp:null, spCls:'',
-      prog:'Apresiasi / Monitoring', color:'#22c55e',
-      sub:'Saldo poin aman. Tidak ada tindakan pembinaan yang diperlukan saat ini.',
-      tindakan:'Tidak ada tindakan pembinaan. Kondisi ini mencerminkan perilaku baik.',
-      tujuan:'Menjaga saldo poin tetap positif dan terus meningkatkan prestasi.',
-      catatan:'Poin prestasi dapat terus meningkatkan saldo positif.' },
-    { label:'Tingkat I', range:'1–20 poin negatif', sp:'SP1', spCls:'jst-chip-sp1',
-      prog:'Pembinaan Umum', color:'#10b981',
-      sub:'Teguran ringan & <strong>pembinaan umum</strong>. Fokus kebiasaan baik, disiplin dasar, dan kerja sama (STP2K).',
-      tindakan:'Teguran lisan/tertulis sebagai pengingat awal.',
-      tujuan:'Edukasi dini & pembiasaan perilaku baik.',
-      catatan:'Poin dapat kembali aman dengan mengumpulkan prestasi.' },
-    { label:'Tingkat II', range:'21–40 poin negatif', sp:'SP1', spCls:'jst-chip-sp1',
-      prog:'Pembinaan Umum / Panggilan Orang Tua', color:'#f59e0b',
-      sub:'Peringatan <strong>SP1</strong> & pendampingan wali kelas. Evaluasi perilaku dan komitmen perbaikan.',
-      tindakan:'SP1 tertulis & pertemuan singkat dengan orang tua.',
-      tujuan:'Kolaborasi sekolah–orang tua untuk menghentikan pelanggaran berulang.',
-      catatan:'Monitoring perilaku selama periode tertentu.' },
-    { label:'Tingkat III', range:'41–60 poin negatif', sp:'SP2', spCls:'jst-chip-sp2',
-      prog:'Panggilan Orang Tua', color:'#f97316',
-      sub:'Peringatan <strong>SP2</strong> & rencana perbaikan terukur bersama guru/BK.',
-      tindakan:'SP2 & rencana perbaikan (action plan) bersama wali kelas/BK.',
-      tujuan:'Perubahan perilaku berkelanjutan dengan target yang terukur.',
-      catatan:'Evaluasi berkala dan penilaian kemajuan.' },
-    { label:'Tingkat IV', range:'61–80 poin negatif', sp:'SP3', spCls:'jst-chip-sp3',
-      prog:'Pembinaan Khusus', color:'#ef4444',
-      sub:'Pembinaan <strong>khusus terpadu</strong> dengan guru/BK, pemantauan ketat & komunikasi orang tua.',
-      tindakan:'SP3 & program pembinaan terstruktur (coaching/konseling intensif).',
-      tujuan:'Koreksi menyeluruh dengan pengawasan ketat.',
-      catatan:'Pelanggaran lanjutan berisiko naik ke Tingkat V.' },
-    { label:'Tingkat V', range:'81–99 poin negatif', sp:'SP4', spCls:'jst-chip-sp4',
-      prog:'Konferensi Kasus', color:'#b91c1c',
-      sub:'Sidang/konferensi pembinaan sekolah & rekomendasi tindakan. <strong>Monitoring harian</strong>.',
-      tindakan:'SP4, konferensi kasus, penetapan sanksi tegas.',
-      tujuan:'Keputusan tindak lanjut terakhir sebelum pemulangan.',
-      catatan:'Dampak akademik bisa terjadi (mis. tidak naik kelas).' },
-    { label:'Tingkat VI', range:'≥100 poin negatif', sp:'SP4', spCls:'jst-chip-sp4',
-      prog:'Dikembalikan pada Orang Tua', color:'#7f1d1d',
-      sub:'Tindak lanjut kebijakan sekolah (mis. <strong>SP3/keputusan akhir</strong>) sesuai peraturan.',
-      tindakan:'Pemulangan ke orang tua sesuai ketentuan sekolah.',
-      tujuan:'Keselamatan, tanggung jawab, dan pembinaan lanjutan di keluarga.',
-      catatan:'Semua proses terdokumentasi & melibatkan pihak terkait.' }
-  ];
+  // Dibangun server-side dari konfigurasi ambang SP (skala & jumlah level).
+  var D = <?php echo json_encode($__jenjangTiers, JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
 
   var inner  = document.getElementById('jstDetailInner');
   var curSel = -1;

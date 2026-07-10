@@ -36,13 +36,18 @@ $total = $plus - $minus;
 $jml_prestasi   = (int)mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT COUNT(*) v FROM input_prestasi WHERE siswa={$id_siswa}"))['v'];
 $jml_pelanggaran= (int)mysqli_fetch_assoc(mysqli_query($koneksi,"SELECT COUNT(*) v FROM input_pelanggaran WHERE siswa={$id_siswa}"))['v'];
 
-// Status SP berdasar saldo negatif (selaras dashboard)
+// Status SP berdasar saldo negatif (selaras dashboard, ambang fleksibel via config)
+require_once __DIR__ . '/../includes/epoin_sp_helpers.php';
 $neg = max(0, -$total);
-if     ($neg >= 81) { $sp='SP4'; $spText='Peringatan Terakhir'; $spColor='#b91c1c'; }
-elseif ($neg >= 61) { $sp='SP3'; $spText='Pembinaan Khusus';    $spColor='#ef4444'; }
-elseif ($neg >= 41) { $sp='SP2'; $spText='Panggilan Orang Tua'; $spColor='#f97316'; }
-elseif ($neg >= 21) { $sp='SP1'; $spText='Peringatan 1';        $spColor='#f59e0b'; }
-else                { $sp='AMAN';$spText='Tidak ada tindakan';  $spColor='#10b981'; }
+$sp  = epoin_sp_status_for($neg, $koneksi);
+if ($sp === null) {
+  $sp = 'AMAN'; $spText = 'Tidak ada tindakan'; $spColor = '#10b981';
+} else {
+  $spText = 'Peringatan'; $spColor = '#f59e0b';
+  foreach (epoin_sp_stages($koneksi) as $st) {
+    if ($neg >= $st['min'] && $neg <= $st['max']) { $spText = (string)$st['program']; $spColor = (string)$st['color']; break; }
+  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">

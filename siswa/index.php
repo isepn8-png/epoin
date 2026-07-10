@@ -186,36 +186,23 @@ if (isset($profil) && is_array($profil)) {
   }
 }
 
-/* ====== Mapping Jenjang / Stage dari saldo negatif ====== */
+/* ====== Mapping Jenjang / Stage dari saldo negatif (config ambang fleksibel) ====== */
+require_once __DIR__ . '/../includes/epoin_sp_helpers.php';
+
 $saldo    = (int)$total_poin;
 $negSaldo = max(0, -$saldo);
 
-$levelActive = 0; // 0 = aman / tidak masuk jenjang
-if ($negSaldo >= 1 && $negSaldo <= 20)   $levelActive = 1;
-elseif ($negSaldo <= 40) $levelActive = 2;
-elseif ($negSaldo <= 60) $levelActive = 3;
-elseif ($negSaldo <= 80) $levelActive = 4;
-elseif ($negSaldo <= 99) $levelActive = 5;
-elseif ($negSaldo >= 100) $levelActive = 6;
-
-/* ====== Data pendukung bagian progres (tetap) ====== */
 $SP_BY_SALDO_SEQUENTIAL = true;
 
-$STAGES = [
-  ['roman'=>'I',   'min'=>1,   'max'=>20,     'program'=>'Pembinaan Umum',                          'action'=>'Teguran',                           'color'=>'#10b981', 'sp'=>'SP1'],
-  ['roman'=>'II',  'min'=>21,  'max'=>40,     'program'=>'Pembinaan Umum / Panggilan Orang Tua',    'action'=>'Peringatan 1 (SP1)',               'color'=>'#f59e0b', 'sp'=>'SP1'],
-  ['roman'=>'III', 'min'=>41,  'max'=>60,     'program'=>'Panggilan Orang Tua',                     'action'=>'Peringatan 2 (SP2)',               'color'=>'#f97316', 'sp'=>'SP2'],
-  ['roman'=>'IV',  'min'=>61,  'max'=>80,     'program'=>'Pembinaan Khusus',                        'action'=>'Peringatan 3 (SP3)',               'color'=>'#ef4444', 'sp'=>'SP3'],
-  ['roman'=>'V',   'min'=>81,  'max'=>90,     'program'=>'Konferensi Kasus',                        'action'=>'Peringatan Terakhir (SP4)',        'color'=>'#b91c1c', 'sp'=>'SP4'],
-  ['roman'=>'V',   'min'=>91,  'max'=>99,     'program'=>'Konferensi Kasus',                        'action'=>'Tidak naik kelas (SP4)',           'color'=>'#7f1d1d', 'sp'=>'SP4'],
-  ['roman'=>'VI',  'min'=>100, 'max'=>999999, 'program'=>'Dikembalikan pada Orang Tua',             'action'=>'Pemulangan (SP4)',                 'color'=>'#111827', 'sp'=>'SP4'],
-];
+$STAGES = epoin_sp_stages($koneksi); // dibangun dari skala & jumlah level yang dikonfigurasi
+$scaleMax = (int) epoin_sp_config($koneksi)['skala_max']; // skala maks (denominator risiko), mis. 100/200
 $SAFE_STAGE = ['roman'=>'-', 'min'=>0, 'max'=>0, 'program'=>'Apresiasi / Monitoring', 'action'=>'Tidak ada tindakan', 'color'=>'#10b981', 'sp'=>null];
 
 $currentStage = $SAFE_STAGE;
+$levelActive  = 0; // 0 = aman; selain itu = urutan tahap aktif
 if ($negSaldo > 0){
-  foreach($STAGES as $st){
-    if($negSaldo >= $st['min'] && $negSaldo <= $st['max']){ $currentStage = $st; break; }
+  foreach($STAGES as $i => $st){
+    if($negSaldo >= $st['min'] && $negSaldo <= $st['max']){ $currentStage = $st; $levelActive = $i + 1; break; }
   }
 }
 
@@ -236,12 +223,8 @@ $qlast = mysqli_query($koneksi, "
 ");
 if($qlast){ $last = mysqli_fetch_assoc($qlast); }
 
-/* — Status SP — */
-$spStatus = 'Belum SP';
-if ($negSaldo >= 81)      $spStatus = 'SP4';
-elseif ($negSaldo >= 61)  $spStatus = 'SP3';
-elseif ($negSaldo >= 41)  $spStatus = 'SP2';
-elseif ($negSaldo >= 21)  $spStatus = 'SP1';
+/* — Status SP (dari ambang fleksibel) — */
+$spStatus = epoin_sp_status_for($negSaldo, $koneksi) ?? 'Belum SP';
 
 /* — Visual progres saldo — */
 $scaleMaxSaldo = max(100, abs($saldo));
@@ -641,7 +624,7 @@ $toSafe = $saldo < 0 ? abs($saldo) : 0;
                 <div class="viol-wrap" style="margin-top:12px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                     <b>Progres Poin (berdasarkan saldo)</b>
-                    <span id="riskText"><?php echo $negSaldo; ?> / 100 (risiko sanksi)</span>
+                    <span id="riskText"><?php echo $negSaldo; ?> / <?php echo (int)$scaleMax; ?> (risiko sanksi)</span>
                   </div>
                   <div class="viol-bar" title="Semakin penuh = saldo semakin negatif">
                     <div id="riskFill" class="viol-fill" style="width:0; background:<?php echo h($stageColor); ?>;"></div>
@@ -1239,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', function(){
       if(saldoBar) saldoBar.style.width = pct + '%';
       if(saldoPct) saldoPct.textContent = pct + '%';
       if(riskFill) riskFill.style.width = rPct + '%';
-      if(riskText) riskText.textContent = '<?php echo $negSaldo; ?> / 100 (risiko sanksi)';
+      if(riskText) riskText.textContent = '<?php echo $negSaldo; ?> / <?php echo (int)$scaleMax; ?> (risiko sanksi)';
     }, 150);
   })();
 

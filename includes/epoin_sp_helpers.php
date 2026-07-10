@@ -6,15 +6,151 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/epoin_security.php';
 
-function epoin_sp_levels(): array
+/* =====================================================================
+   KONFIGURASI AMBANG SP — FLEKSIBEL (skala proporsional + jumlah level)
+   ---------------------------------------------------------------------
+   Sumber: tabel `app_meta` (meta_key 'sp_skala_max' & 'sp_jumlah_level').
+   Fallback AMAN ke 100 / 4 bila tabel/baris belum ada → perilaku lama
+   (SP1>=21, SP2>=41, SP3>=61, SP4>=81) tidak berubah sebelum diatur.
+
+   Rumus proporsional: band = skala_max / (jumlah_level + 1)
+   ambang SPk = floor(k * band) + 1   ; pemulangan = >= skala_max
+   Contoh 100/4 → 21/41/61/81 (sama seperti sekarang).
+   Contoh 200/4 → 41/81/121/161.
+   ===================================================================== */
+
+const EPOIN_SP_DEFAULT_SKALA = 100;
+const EPOIN_SP_DEFAULT_LEVEL = 4;
+
+function epoin_sp_config(?mysqli $koneksi = null): array
 {
-    return ['SP1', 'SP2', 'SP3', 'SP4'];
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $max    = EPOIN_SP_DEFAULT_SKALA;
+    $levels = EPOIN_SP_DEFAULT_LEVEL;
+    $canCache = false;
+
+    if ($koneksi instanceof mysqli) {
+        $res = @mysqli_query(
+            $koneksi,
+            "SELECT meta_key, meta_value FROM app_meta
+             WHERE meta_key IN ('sp_skala_max','sp_jumlah_level')"
+        );
+        if ($res) {
+            while ($row = mysqli_fetch_assoc($res)) {
+                if ($row['meta_key'] === 'sp_skala_max')    { $max    = (int) $row['meta_value']; }
+                if ($row['meta_key'] === 'sp_jumlah_level') { $levels = (int) $row['meta_value']; }
+            }
+            @mysqli_free_result($res);
+            $canCache = true; // tabel app_meta ada → boleh cache per-request
+        }
+    }
+
+    // Sanity clamp
+    if ($levels < 1)  { $levels = 1; }
+    if ($levels > 12) { $levels = 12; } // dibatasi ketersediaan angka romawi tahap
+    if ($max < ($levels + 1)) { $max = $levels + 1; } // tiap band minimal 1 poin
+
+    $out = ['skala_max' => $max, 'jumlah_level' => $levels];
+    if ($canCache) {
+        $cache = $out;
+    }
+    return $out;
 }
 
-function epoin_sp_validate_level(string $level): ?string
+/** Ambang minimal negSaldo per level: ['SP1'=>21,'SP2'=>41,...] (proporsional dari config). */
+function epoin_sp_thresholds(?mysqli $koneksi = null): array
+{
+    $cfg  = epoin_sp_config($koneksi);
+    $band = $cfg['skala_max'] / ($cfg['jumlah_level'] + 1);
+    $thr  = [];
+    for ($k = 1; $k <= $cfg['jumlah_level']; $k++) {
+        $thr['SP' . $k] = (int) floor($k * $band) + 1;
+    }
+    return $thr;
+}
+
+function epoin_sp_levels(?mysqli $koneksi = null): array
+{
+    $out = [];
+    $L = epoin_sp_config($koneksi)['jumlah_level'];
+    for ($k = 1; $k <= $L; $k++) {
+        $out[] = 'SP' . $k;
+    }
+    return $out;
+}
+
+function epoin_sp_validate_level(string $level, ?mysqli $koneksi = null): ?string
 {
     $level = strtoupper(trim($level));
-    return in_array($level, epoin_sp_levels(), true) ? $level : null;
+    return in_array($level, epoin_sp_levels($koneksi), true) ? $level : null;
+}
+
+/** Level SP aktif berdasarkan negSaldo (null bila aman/di bawah SP1). */
+function epoin_sp_status_for(int $negSaldo, ?mysqli $koneksi = null): ?string
+{
+    if ($negSaldo <= 0) {
+        return null;
+    }
+    $active = null;
+    foreach (epoin_sp_thresholds($koneksi) as $lvl => $min) {
+        if ($negSaldo >= $min) { $active = $lvl; }
+    }
+    return $active;
+}
+
+/**
+ * Tahapan pembinaan (display) dibangun dari config — dipakai cetak & portal siswa
+ * agar tidak ada lagi angka ambang yang di-hardcode/duplikat.
+ * @return array<int,array{roman:string,min:int,max:int,program:string,action:string,sp:?string,color:string}>
+ */
+function epoin_sp_stages(?mysqli $koneksi = null): array
+{
+    $cfg = epoin_sp_config($koneksi);
+    $M   = $cfg['skala_max'];
+    $L   = $cfg['jumlah_level'];
+    $thr = epoin_sp_thresholds($koneksi);
+    $romans  = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV'];
+    $palette = ['#f59e0b','#f97316','#ef4444','#b91c1c','#7f1d1d','#4c0519'];
+
+    $stages = [];
+    // Tahap awal: pembinaan umum (sebelum SP1) — belum terbit SP
+    $stages[] = [
+        'roman'   => $romans[0],
+        'min'     => 1,
+        'max'     => max(1, $thr['SP1'] - 1),
+        'program' => 'Pembinaan Umum',
+        'action'  => 'Teguran',
+        'sp'      => null,
+        'color'   => '#10b981',
+    ];
+    for ($k = 1; $k <= $L; $k++) {
+        $lo = $thr['SP' . $k];
+        $hi = ($k < $L) ? ($thr['SP' . ($k + 1)] - 1) : ($M - 1);
+        if ($hi < $lo) { $hi = $lo; }
+        $stages[] = [
+            'roman'   => $romans[$k] ?? (string) ($k + 1),
+            'min'     => $lo,
+            'max'     => $hi,
+            'program' => ($k === $L) ? 'Konferensi Kasus' : 'Pembinaan Bertingkat ' . $k,
+            'action'  => 'Peringatan ' . $k . ' (SP' . $k . ')',
+            'sp'      => 'SP' . $k,
+            'color'   => $palette[($k - 1) % count($palette)],
+        ];
+    }
+    // Tahap akhir: pemulangan (>= skala maksimal)
+    $stages[] = [
+        'roman'   => $romans[$L + 1] ?? 'MAX',
+        'min'     => $M,
+        'max'     => 999999,
+        'program' => 'Dikembalikan pada Orang Tua',
+        'action'  => 'Pemulangan (SP' . $L . ')',
+        'sp'      => 'SP' . $L,
+        'color'   => '#111827',
+    ];
+    return $stages;
 }
 
 function epoin_sp_sanitize_alasan(string $alasan, int $maxLen = 1000): string
@@ -33,7 +169,7 @@ function epoin_sp_ensure_schema(mysqli $koneksi): void
     @mysqli_query($koneksi, "CREATE TABLE IF NOT EXISTS `sp_log` (
       `id` INT(11) NOT NULL AUTO_INCREMENT,
       `siswa_id` INT(11) NOT NULL,
-      `sp_level` ENUM('SP1','SP2','SP3','SP4') NOT NULL,
+      `sp_level` VARCHAR(8) NOT NULL,
       `running_no` INT(11) NOT NULL,
       `nomor` VARCHAR(64) NOT NULL,
       `alasan` TEXT DEFAULT NULL,
@@ -93,23 +229,32 @@ function epoin_sp_issued_levels_year(mysqli $koneksi, int $siswaId, int $year): 
     return $issued;
 }
 
-function epoin_sp_can_issue_level(string $level, int $negSaldo, array $issued, bool $sequential = true): bool
-{
+function epoin_sp_can_issue_level(
+    string $level,
+    int $negSaldo,
+    array $issued,
+    bool $sequential = true,
+    ?array $thresholds = null
+): bool {
     if ($negSaldo <= 0) {
         return false;
     }
-    switch ($level) {
-        case 'SP1':
-            return $negSaldo >= 21;
-        case 'SP2':
-            return $negSaldo >= 41 && (!$sequential || !empty($issued['SP1']));
-        case 'SP3':
-            return $negSaldo >= 61 && (!$sequential || !empty($issued['SP2']));
-        case 'SP4':
-            return $negSaldo >= 81 && (!$sequential || !empty($issued['SP3']));
-        default:
-            return false;
+    $level = strtoupper(trim($level));
+    if ($thresholds === null) {
+        // Fallback aman: hitung dari default (100/4) bila pemanggil tak mengoper.
+        $thresholds = epoin_sp_thresholds(null);
     }
+    if (!isset($thresholds[$level]) || $negSaldo < $thresholds[$level]) {
+        return false;
+    }
+    // Urutan berjenjang: SPk hanya boleh bila SP(k-1) sudah terbit tahun ini.
+    if ($sequential && preg_match('/^SP(\d+)$/', $level, $m)) {
+        $n = (int) $m[1];
+        if ($n > 1 && empty($issued['SP' . ($n - 1)])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function epoin_sp_user_name_column(mysqli $koneksi): string
@@ -263,7 +408,7 @@ function epoin_sp_auto_create_for_print(
     int $negSaldo,
     string $schoolCode = 'SMPN1GTJ'
 ): ?array {
-    if (!epoin_sp_can_issue_level($level, $negSaldo, [], false)) {
+    if (!epoin_sp_can_issue_level($level, $negSaldo, [], false, epoin_sp_thresholds($koneksi))) {
         return null;
     }
     $year = (int) date('Y');
@@ -327,7 +472,7 @@ function epoin_sp_ajax_issue_endpoint(): void
     epoin_sp_ensure_schema($koneksi);
 
     $siswaId = (int) ($_POST['siswa_id'] ?? 0);
-    $level   = epoin_sp_validate_level((string) ($_POST['sp_level'] ?? ''));
+    $level   = epoin_sp_validate_level((string) ($_POST['sp_level'] ?? ''), $koneksi);
     $alasan  = epoin_sp_sanitize_alasan((string) ($_POST['alasan'] ?? ''));
     $sekolahId = (int) ($_POST['sekolah_id'] ?? ($_SESSION['sekolah_id'] ?? 1));
 
@@ -360,7 +505,7 @@ function epoin_sp_ajax_issue_endpoint(): void
 
     $year = (int) date('Y');
     $issued = epoin_sp_issued_levels_year($koneksi, $siswaId, $year);
-    if (!epoin_sp_can_issue_level($level, $saldoData['negSaldo'], $issued, true)) {
+    if (!epoin_sp_can_issue_level($level, $saldoData['negSaldo'], $issued, true, epoin_sp_thresholds($koneksi))) {
         $jsonEnd(false, 'Ambang saldo/urutan belum terpenuhi untuk ' . $level . '.');
     }
 
@@ -387,6 +532,7 @@ function epoin_sp_ajax_issue_endpoint(): void
         "Menerbitkan $level ({$nums['nomor']}) untuk siswa #$siswaId oleh $namaGuru"
     );
 
-    $printUrl = strtolower($level) . '_cetak.php?id=' . $siswaId;
+    // Rute cetak generik: sp1_cetak.php adalah mesin, terima ?sp=SPk (dukung level > 4).
+    $printUrl = 'sp1_cetak.php?sp=' . $level . '&id=' . $siswaId;
     $jsonEnd(true, 'SP diterbitkan.', ['print_url' => $printUrl, 'nomor' => $nums['nomor']]);
 }

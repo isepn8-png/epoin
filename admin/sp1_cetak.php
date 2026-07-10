@@ -239,18 +239,15 @@ if (!function_exists('find_waka_kesiswaan')) {
   }
 }
 
-// ===== Deteksi level SP =====
+// ===== Deteksi level SP (dukung SPk dinamis, mis. SP5 bila jumlah level dinaikkan) =====
 $sp = isset($_GET['sp']) ? strtoupper(trim($_GET['sp'])) : '';
 if ($sp==='') {
   $scr = strtolower(basename($_SERVER['SCRIPT_NAME'] ?? ''));
-  if (strpos($scr, 'sp1') !== false) $sp = 'SP1';
-  elseif (strpos($scr, 'sp2') !== false) $sp = 'SP2';
-  elseif (strpos($scr, 'sp3') !== false) $sp = 'SP3';
-  elseif (strpos($scr, 'sp4') !== false) $sp = 'SP4';
+  if (preg_match('/sp(\d+)/', $scr, $m)) { $sp = 'SP' . (int)$m[1]; }
 }
 require_once __DIR__ . '/../includes/epoin_sp_helpers.php';
 
-$spValidated = epoin_sp_validate_level($sp !== '' ? $sp : 'SP1');
+$spValidated = epoin_sp_validate_level($sp !== '' ? $sp : 'SP1', $koneksi);
 $sp = $spValidated ?? 'SP1';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -303,16 +300,11 @@ $totPelang   = epoin_sum_pelanggaran_siswa($koneksi, $id);
 $saldo       = $totPrestasi - $totPelang;
 $negSaldo    = max(0, -$saldo);
 
-// ===== Tahapan pembinaan =====
-$STAGES = [
-  ['roman'=>'I',   'min'=>1,   'max'=>20,     'program'=>'Pembinaan Umum',                       'action'=>'Teguran',                 'sp'=>'SP1'],
-  ['roman'=>'II',  'min'=>21,  'max'=>40,     'program'=>'Pembinaan Umum / Panggilan Orang Tua', 'action'=>'Peringatan 1 (SP 1)',     'sp'=>'SP1'],
-  ['roman'=>'III', 'min'=>41,  'max'=>60,     'program'=>'Panggilan Orang Tua',                  'action'=>'Peringatan 2 (SP 2)',     'sp'=>'SP2'],
-  ['roman'=>'IV',  'min'=>61,  'max'=>80,     'program'=>'Pembinaan Khusus',                     'action'=>'Peringatan 3 (SP 3)',     'sp'=>'SP3'],
-  ['roman'=>'V',   'min'=>81,  'max'=>90,     'program'=>'Konferensi Kasus',                     'action'=>'Peringatan Terakhir (SP 4)','sp'=>'SP4'],
-  ['roman'=>'V',   'min'=>91,  'max'=>99,     'program'=>'Konferensi Kasus',                     'action'=>'Tidak naik kelas (SP 4)', 'sp'=>'SP4'],
-  ['roman'=>'VI',  'min'=>100, 'max'=>999999, 'program'=>'Dikembalikan pada Orang Tua',          'action'=>'Pemulangan (SP 4)',       'sp'=>'SP4'],
-];
+// ===== Tahapan pembinaan (dibangun dari konfigurasi fleksibel, bukan lagi hardcode) =====
+$spConfig = epoin_sp_config($koneksi);
+$scaleMax = (int) $spConfig['skala_max'];
+$spThresholds = epoin_sp_thresholds($koneksi);
+$STAGES = epoin_sp_stages($koneksi);
 $SAFE_STAGE = ['roman'=>'-', 'min'=>0, 'max'=>0, 'program'=>'Apresiasi / Monitoring', 'action'=>'Tidak ada tindakan', 'sp'=>null];
 
 $currentStage = $SAFE_STAGE;
@@ -352,7 +344,7 @@ epoin_sp_ensure_schema($koneksi);
 $year = (int) date('Y');
 $log = epoin_sp_fetch_latest_log($koneksi, $id, $sp, $year);
 
-$allow = epoin_sp_can_issue_level($sp, $negSaldo, [], false);
+$allow = epoin_sp_can_issue_level($sp, $negSaldo, [], false, $spThresholds);
 if (!$log && $allow) {
   $log = epoin_sp_auto_create_for_print($koneksi, $id, $sp, $negSaldo, $SCHOOL_CODE_UP ?? 'SMPN1GTJ');
 }
@@ -511,7 +503,7 @@ $kopPath = "../gambar/sistem/kop_sekolah.png";
                 <?php if($saldo>=0): ?>
                   <span class="badge bg-green">+<?php echo $saldo; ?></span> (Aman/Apresiasi)
                 <?php else: ?>
-                  <span class="badge bg-red"><?php echo $saldo; ?></span> (Risiko sanksi: <?php echo $negSaldo; ?>/100)
+                  <span class="badge bg-red"><?php echo $saldo; ?></span> (Risiko sanksi: <?php echo $negSaldo; ?>/<?php echo (int)$scaleMax; ?>)
                 <?php endif; ?>
               </td>
           </tr>
@@ -529,7 +521,7 @@ $kopPath = "../gambar/sistem/kop_sekolah.png";
         </table>
       </div>
 
-      <?php if (!$log && $negSaldo < ( $sp==='SP1'?21 : ($sp==='SP2'?41 : ($sp==='SP3'?61 : 81)) ) ): ?>
+      <?php if (!$log && $negSaldo < ($spThresholds[$sp] ?? PHP_INT_MAX)): ?>
         <div class="note-warn">
           Catatan: Ambang saldo untuk <?php echo e($sp); ?> belum terpenuhi pada saat pembuatan dokumen ini dan belum ada catatan penerbitan di log tahun <?php echo e(date('Y')); ?>.
           Dokumen ini bersifat <b>draft</b> (tanpa nomor surat).

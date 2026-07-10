@@ -60,19 +60,15 @@ if (!function_exists('e')) {
   function e($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 }
 
-// ===== Konfigurasi kebijakan SP berbasis SALDO =====
+// ===== Konfigurasi kebijakan SP berbasis SALDO (fleksibel via config app_meta) =====
+require_once __DIR__ . '/../includes/epoin_sp_helpers.php';
 $SP_BY_SALDO_SEQUENTIAL = true;
 
-// ===== Pemetaan Tingkat Pembinaan (DIPAKAI UNTUK SALDO NEGATIF) =====
-$STAGES = [
-  ['roman'=>'I',   'min'=>1,   'max'=>20,     'program'=>'Pembinaan Umum',                          'action'=>'Teguran',                           'color'=>'#10b981', 'sp'=>'SP1'],
-  ['roman'=>'II',  'min'=>21,  'max'=>40,     'program'=>'Pembinaan Umum / Panggilan Orang Tua',    'action'=>'Peringatan 1 (SP 1)',               'color'=>'#f59e0b', 'sp'=>'SP1'],
-  ['roman'=>'III', 'min'=>41,  'max'=>60,     'program'=>'Panggilan Orang Tua',                     'action'=>'Peringatan 2 (SP 2)',               'color'=>'#f97316', 'sp'=>'SP2'],
-  ['roman'=>'IV',  'min'=>61,  'max'=>80,     'program'=>'Pembinaan Khusus',                        'action'=>'Peringatan 3 (SP 3)',               'color'=>'#ef4444', 'sp'=>'SP3'],
-  ['roman'=>'V',   'min'=>81,  'max'=>90,     'program'=>'Konferensi Kasus',                        'action'=>'Peringatan Terakhir (SP 4)',        'color'=>'#b91c1c', 'sp'=>'SP4'],
-  ['roman'=>'V',   'min'=>91,  'max'=>99,     'program'=>'Konferensi Kasus',                        'action'=>'Tidak naik kelas (SP 4)',           'color'=>'#7f1d1d', 'sp'=>'SP4'],
-  ['roman'=>'VI',  'min'=>100, 'max'=>999999, 'program'=>'Dikembalikan pada Orang Tua',             'action'=>'Pemulangan (SP 4)',                 'color'=>'#111827', 'sp'=>'SP4'],
-];
+// Ambang, daftar level, & tahapan dibangun dari konfigurasi — bukan hardcode lagi.
+$spThresholds = epoin_sp_thresholds($koneksi);
+$spLevels     = epoin_sp_levels($koneksi);   // ['SP1','SP2',...] sesuai jumlah level
+$STAGES       = epoin_sp_stages($koneksi);
+$scaleMax     = (int) epoin_sp_config($koneksi)['skala_max']; // denominator risiko
 $SAFE_STAGE = ['roman'=>'-', 'min'=>0, 'max'=>0, 'program'=>'Apresiasi / Monitoring', 'action'=>'Tidak ada tindakan', 'color'=>'#10b981', 'sp'=>null];
 
 // ===== Ambil data siswa =====
@@ -103,25 +99,23 @@ $saldo = $totPrestasi - $totPelang; // saldo poin (positif = bagus)
 // ===== Tentukan tahap pembinaan saat ini (BERDASARKAN SALDO) =====
 $negSaldo = max(0, -$saldo); // hanya hitung saat saldo negatif
 $currentStage = $SAFE_STAGE;
+$levelActive  = 0; // 0 = aman; selain itu = urutan tahap aktif (indeks $STAGES + 1)
 if ($negSaldo > 0){
-  foreach($STAGES as $st){
+  foreach($STAGES as $i => $st){
     if($negSaldo >= $st['min'] && $negSaldo <= $st['max']){
-      $currentStage = $st; break;
+      $currentStage = $st; $levelActive = $i + 1; break;
     }
   }
 }
-$levelActive = 0;
-if ($negSaldo >= 1   && $negSaldo <= 20)  $levelActive = 1;
-elseif ($negSaldo <= 40) $levelActive = 2;
-elseif ($negSaldo <= 60) $levelActive = 3;
-elseif ($negSaldo <= 80) $levelActive = 4;
-elseif ($negSaldo <= 99) $levelActive = 5;
-elseif ($negSaldo >= 100) $levelActive = 6;
 $jenjang_nama_siswa = $k['siswa_nama'] ?? '';
 
 // ===== Pesan WA Orang Tua =====
 $hpOrtu = trim($k['hp_ortu'] ?? '');
-$spStatusWa = $currentStage['sp'] ? "\xF0\x9F\x94\xB4 Status Pembinaan: ".$currentStage['sp'] : "\xE2\x9C\x85 Status Pembinaan: Aman";
+$spStatusWa = $currentStage['sp']
+  ? "\xF0\x9F\x94\xB4 Status Pembinaan: ".$currentStage['sp']
+  : ($negSaldo > 0
+      ? "\xF0\x9F\x9F\xA0 Status Pembinaan: ".$currentStage['program']  // ada poin negatif tapi belum ambang SP
+      : "\xE2\x9C\x85 Status Pembinaan: Aman");
 $waMsg = "Yth. Orang Tua/Wali ".$k['siswa_nama']." (".$k['jurusan_nama'].")\n"
        . "Kami informasikan perkembangan poin disiplin putra-putri Anda:\n\n"
        . "\xF0\x9F\x93\x8A Saldo Poin: ".$saldo."\n"
@@ -135,21 +129,7 @@ if ($waDigits !== '' && $waDigits[0] === '0') $waDigits = '62'.substr($waDigits,
 $waUrl = "https://wa.me/{$waDigits}?text=".rawurlencode($waMsg);
 
 // ===== LOG SP: cek apakah SP sudah diterbitkan (tahun berjalan) =====
-mysqli_query($koneksi, "CREATE TABLE IF NOT EXISTS `sp_log` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `siswa_id` INT NOT NULL,
-  `sp_level` ENUM('SP1','SP2','SP3','SP4') NOT NULL,
-  `running_no` INT NOT NULL,
-  `nomor` VARCHAR(64) NOT NULL,
-  `alasan` TEXT NULL,
-  `signer_user_id` INT NULL,
-  `signer_posisi_key` ENUM('kepala','wakasek_kesiswaan','guru_bp') NULL,
-  `signer_nama` VARCHAR(120) NULL,
-  `signer_jabatan` VARCHAR(120) NULL,
-  `tanggal` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY `idx_year` (`tanggal`),
-  KEY `idx_siswa` (`siswa_id`, `sp_level`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+epoin_sp_ensure_schema($koneksi); // buat/selaraskan sp_log (sp_level VARCHAR — dukung SP5+)
 
 if (!function_exists('sp_issued')) {
   function sp_issued($koneksi, $sid, $level){
@@ -158,27 +138,17 @@ if (!function_exists('sp_issued')) {
     return $q ? mysqli_fetch_assoc($q) : null;
   }
 }
-$sp1_issued = sp_issued($koneksi, $id_siswa, 'SP1');
-$sp2_issued = sp_issued($koneksi, $id_siswa, 'SP2');
-$sp3_issued = sp_issued($koneksi, $id_siswa, 'SP3');
-$sp4_issued = sp_issued($koneksi, $id_siswa, 'SP4');
+// Riwayat penerbitan per level (tahun berjalan) — untuk semua level terkonfigurasi.
+$spIssued = [];
+foreach ($spLevels as $lvl) { $spIssued[$lvl] = sp_issued($koneksi, $id_siswa, $lvl); }
+$spIssuedFlags = array_map(static function ($r) { return (bool) $r; }, $spIssued);
 
-// ===== Ambang tombol aktif (SEKARANG BERDASARKAN SALDO NEGATIF) =====
-if ($SP_BY_SALDO_SEQUENTIAL) {
-  $canSP1 = ($negSaldo >= 21);
-  $canSP2 = ($negSaldo >= 41) && (bool)$sp1_issued;
-  $canSP3 = ($negSaldo >= 61) && (bool)$sp2_issued;
-  $canSP4 = ($negSaldo >= 81) && (bool)$sp3_issued;
-} else {
-  $canSP1 = ($negSaldo >= 21);
-  $canSP2 = ($negSaldo >= 41);
-  $canSP3 = ($negSaldo >= 61);
-  $canSP4 = ($negSaldo >= 81);
-}
-
-// ===== HARD GUARD: jika saldo >= 0, nonaktifkan penerbitan SP baru (reprint tetap boleh) =====
-if ($saldo >= 0) {
-  $canSP1 = $canSP2 = $canSP3 = $canSP4 = false;
+// ===== Ambang tombol aktif per level (dari config; konsisten dgn endpoint penerbitan) =====
+// Hard guard: bila saldo >= 0, penerbitan SP baru dimatikan (cetak ulang tetap boleh).
+$spCan = [];
+foreach ($spLevels as $lvl) {
+  $spCan[$lvl] = ($saldo < 0)
+    && epoin_sp_can_issue_level($lvl, $negSaldo, $spIssuedFlags, $SP_BY_SALDO_SEQUENTIAL, $spThresholds);
 }
 
 // ===== Helper label & class tombol SP =====
@@ -196,10 +166,10 @@ if (!function_exists('sp_button_conf')) {
     return $conf;
   }
 }
-$btnSP1 = sp_button_conf($canSP1, $sp1_issued, 'Terbitkan SP1', 'Cetak Ulang SP1');
-$btnSP2 = sp_button_conf($canSP2, $sp2_issued, 'Terbitkan SP2', 'Cetak Ulang SP2');
-$btnSP3 = sp_button_conf($canSP3, $sp3_issued, 'Terbitkan SP3', 'Cetak Ulang SP3');
-$btnSP4 = sp_button_conf($canSP4, $sp4_issued, 'Terbitkan SP4', 'Cetak Ulang SP4');
+$spBtn = [];
+foreach ($spLevels as $lvl) {
+  $spBtn[$lvl] = sp_button_conf($spCan[$lvl], $spIssued[$lvl], 'Terbitkan ' . $lvl, 'Cetak Ulang ' . $lvl);
+}
 
 // ===== Perubahan Terakhir (gabungan prestasi & pelanggaran) =====
 $last = null;
@@ -539,7 +509,7 @@ $trendJson = json_encode($trendPoints, JSON_UNESCAPED_UNICODE);
                   <div class="viol-wrap">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                       <b>Progres Poin Siswa (berdasarkan saldo)</b>
-                      <span><?php echo $negSaldo; ?> / 100 (risiko sanksi)</span>
+                      <span><?php echo $negSaldo; ?> / <?php echo (int)$scaleMax; ?> (risiko sanksi)</span>
                     </div>
                     <div class="viol-bar" title="Semakin penuh = saldo semakin negatif">
                       <div class="viol-fill" style="width:<?php echo $riskPercent; ?>%; background:<?php echo e($stageColor); ?>;"></div>
@@ -584,41 +554,19 @@ $trendJson = json_encode($trendPoints, JSON_UNESCAPED_UNICODE);
 
                       <!-- Tombol SP: Terbitkan / Cetak Ulang (BERDASARKAN SALDO) + modal alasan -->
                       <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px;">
-                        <a href="<?php echo e('sp1_cetak.php?id='.$id_siswa); ?>" target="_blank"
-                           class="btn btn-sm <?php echo $btnSP1['class']; ?> js-sp-btn"
-                           data-enabled="<?php echo $btnSP1['enabled']?1:0; ?>"
-                           data-issued="<?php echo $sp1_issued?1:0; ?>"
-                           data-sp="SP1"
-                           data-print="<?php echo e('sp1_cetak.php?id='.$id_siswa); ?>">
-                          <i class="fa fa-file-text-o"></i> <?php echo e($btnSP1['label']); ?>
+<?php foreach ($spLevels as $lvl):
+                          $b = $spBtn[$lvl];
+                          $printUrl = 'sp1_cetak.php?sp=' . $lvl . '&id=' . $id_siswa; // mesin cetak generik utk SPk apa pun
+                      ?>
+                        <a href="<?php echo e($printUrl); ?>" target="_blank"
+                           class="btn btn-sm <?php echo $b['class']; ?> js-sp-btn"
+                           data-enabled="<?php echo $b['enabled']?1:0; ?>"
+                           data-issued="<?php echo $spIssued[$lvl]?1:0; ?>"
+                           data-sp="<?php echo e($lvl); ?>"
+                           data-print="<?php echo e($printUrl); ?>">
+                          <i class="fa fa-file-text-o"></i> <?php echo e($b['label']); ?>
                         </a>
-
-                        <a href="<?php echo e('sp2_cetak.php?id='.$id_siswa); ?>" target="_blank"
-                           class="btn btn-sm <?php echo $btnSP2['class']; ?> js-sp-btn"
-                           data-enabled="<?php echo $btnSP2['enabled']?1:0; ?>"
-                           data-issued="<?php echo $sp2_issued?1:0; ?>"
-                           data-sp="SP2"
-                           data-print="<?php echo e('sp2_cetak.php?id='.$id_siswa); ?>">
-                          <i class="fa fa-file-text-o"></i> <?php echo e($btnSP2['label']); ?>
-                        </a>
-
-                        <a href="<?php echo e('sp3_cetak.php?id='.$id_siswa); ?>" target="_blank"
-                           class="btn btn-sm <?php echo $btnSP3['class']; ?> js-sp-btn"
-                           data-enabled="<?php echo $btnSP3['enabled']?1:0; ?>"
-                           data-issued="<?php echo $sp3_issued?1:0; ?>"
-                           data-sp="SP3"
-                           data-print="<?php echo e('sp3_cetak.php?id='.$id_siswa); ?>">
-                          <i class="fa fa-file-text-o"></i> <?php echo e($btnSP3['label']); ?>
-                        </a>
-
-                        <a href="<?php echo e('sp4_cetak.php?id='.$id_siswa); ?>" target="_blank"
-                           class="btn btn-sm <?php echo $btnSP4['class']; ?> js-sp-btn"
-                           data-enabled="<?php echo $btnSP4['enabled']?1:0; ?>"
-                           data-issued="<?php echo $sp4_issued?1:0; ?>"
-                           data-sp="SP4"
-                           data-print="<?php echo e('sp4_cetak.php?id='.$id_siswa); ?>">
-                          <i class="fa fa-file-text-o"></i> <?php echo e($btnSP4['label']); ?>
-                        </a>
+                      <?php endforeach; ?>
 
                         <small class="text-muted" style="align-self:center;">
                           (Catatan: <b>Tingkat</b> & <b>SP</b> berdasarkan <b>saldo (netto)</b><?php echo $SP_BY_SALDO_SEQUENTIAL ? ', dan <b>berurutan</b> (SP2⇐SP1, SP3⇐SP2, SP4⇐SP3).' : '.'; ?>
@@ -1123,7 +1071,7 @@ $trendJson = json_encode($trendPoints, JSON_UNESCAPED_UNICODE);
     // Warna per zona berdasarkan saldo kumulatif
     function zoneColor(y){
       if (y >= 0)  return '#22c55e';   // hijau: aman
-      if (y > -21) return '#f59e0b';   // kuning: waspada (belum ambang SP1)
+      if (y > -<?php echo (int)$spThresholds['SP1']; ?>) return '#f59e0b';   // kuning: waspada (belum ambang SP1, dari config)
       return '#ef4444';                // merah: zona SP
     }
 
