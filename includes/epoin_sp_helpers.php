@@ -94,6 +94,11 @@ function epoin_sp_status_for(int $negSaldo, ?mysqli $koneksi = null): ?string
     if ($negSaldo <= 0) {
         return null;
     }
+    $cfg = epoin_sp_config($koneksi);
+    // Pemulangan (dikembalikan ke orang tua) = level SP(L+1) saat mencapai skala maksimal.
+    if ($negSaldo >= $cfg['skala_max']) {
+        return 'SP' . ($cfg['jumlah_level'] + 1);
+    }
     $active = null;
     foreach (epoin_sp_thresholds($koneksi) as $lvl => $min) {
         if ($negSaldo >= $min) { $active = $lvl; }
@@ -140,15 +145,15 @@ function epoin_sp_stages(?mysqli $koneksi = null): array
             'color'   => $palette[($k - 1) % count($palette)],
         ];
     }
-    // Tahap akhir: pemulangan (>= skala maksimal)
+    // Tahap akhir: pemulangan = level tersendiri SP(L+1) "Dikembalikan kepada Orang Tua"
     $stages[] = [
         'roman'   => $romans[$L + 1] ?? 'MAX',
         'min'     => $M,
         'max'     => 999999,
-        'program' => 'Dikembalikan pada Orang Tua',
-        'action'  => 'Pemulangan (SP' . $L . ')',
-        'sp'      => 'SP' . $L,
-        'color'   => '#111827',
+        'program' => 'Dikembalikan kepada Orang Tua',
+        'action'  => 'Dikembalikan kepada Orang Tua (SP' . ($L + 1) . ')',
+        'sp'      => 'SP' . ($L + 1),
+        'color'   => '#7f1d1d',
     ];
     return $stages;
 }

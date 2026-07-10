@@ -37,15 +37,27 @@ $__jenjangTiers = [[
 foreach ($__spStages as $__st) {
   $__sp = $__st['sp'];
   $__n  = $__sp ? (int)substr((string)$__sp, 2) : 0;
-  $__rangeTxt = ((int)$__st['max'] >= 999999)
+  $__isPulang = ((int)$__st['max'] >= 999999);
+  $__rangeTxt = $__isPulang
       ? ('≥' . (int)$__st['min'] . ' poin negatif')
       : ((int)$__st['min'] . '–' . (int)$__st['max'] . ' poin negatif');
-  $__d = ($__sp && isset($__spDesc[$__sp])) ? $__spDesc[$__sp] : [
-      'sub'      => $__sp ? ('Peringatan <strong>' . $__sp . '</strong> & pembinaan sesuai kebijakan sekolah.') : 'Teguran & pembinaan umum. Fokus pembiasaan perilaku baik.',
-      'tindakan' => (string)$__st['action'],
-      'tujuan'   => 'Perbaikan perilaku & pencegahan pelanggaran berulang.',
-      'catatan'  => 'Seluruh proses terdokumentasi dalam sistem.',
-  ];
+  if ($__isPulang) {
+      $__d = [
+          'sub'      => 'Keputusan akhir: peserta didik <strong>dikembalikan kepada orang tua/wali</strong> sesuai peraturan sekolah.',
+          'tindakan' => 'Konferensi kasus & pemulangan ke orang tua/wali; penetapan tindak lanjut akhir.',
+          'tujuan'   => 'Tanggung jawab & pembinaan lanjutan berpindah ke keluarga; menjaga keselamatan & ketertiban.',
+          'catatan'  => 'Seluruh proses terdokumentasi & melibatkan pihak terkait (BK, wali kelas, orang tua).',
+      ];
+  } elseif ($__sp && isset($__spDesc[$__sp])) {
+      $__d = $__spDesc[$__sp];
+  } else {
+      $__d = [
+          'sub'      => $__sp ? ('Peringatan <strong>' . $__sp . '</strong> & pembinaan sesuai kebijakan sekolah.') : 'Teguran & pembinaan umum. Fokus pembiasaan perilaku baik.',
+          'tindakan' => (string)$__st['action'],
+          'tujuan'   => 'Perbaikan perilaku & pencegahan pelanggaran berulang.',
+          'catatan'  => 'Seluruh proses terdokumentasi dalam sistem.',
+      ];
+  }
   $__jenjangTiers[] = [
     'label'   => 'Tingkat ' . $__st['roman'],
     'roman'   => (string)$__st['roman'],

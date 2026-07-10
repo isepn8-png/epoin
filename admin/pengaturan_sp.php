@@ -82,7 +82,7 @@ include 'header.php';
             seluruh modul (penerbitan SP, cetak surat, portal siswa) langsung mengikuti.
           </p>
 
-          <form method="post" action="pengaturan_sp.php" class="form-horizontal" style="max-width:520px;">
+          <form method="post" action="pengaturan_sp.php" style="max-width:520px;">
             <?= epoin_csrf_field() ?>
 
             <div class="form-group">
@@ -96,7 +96,7 @@ include 'header.php';
               <label style="font-weight:700;">Jumlah level SP</label>
               <input type="number" name="sp_jumlah_level" class="form-control" min="1" max="12"
                      value="<?= epoin_h((string) $cfg['jumlah_level']) ?>" required>
-              <small style="color:#64748b;">Default 4 (SP1–SP4). Bisa 1–12 (mis. SP1–SP5).</small>
+              <small style="color:#64748b;">Jumlah level <b>peringatan</b> (default 4 = SP1–SP4). Level <b>pemulangan</b> SP<?php echo (int)$cfg['jumlah_level']+1; ?> (dikembalikan ke orang tua) otomatis di skala maksimal.</small>
             </div>
 
             <button type="submit" class="btn btn-primary" style="font-weight:700;">
