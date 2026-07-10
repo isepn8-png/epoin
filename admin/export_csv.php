@@ -4,9 +4,11 @@
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../koneksi.php';
+require_once __DIR__ . '/../includes/epoin_security.php';
 
-// pastikan fungsi _is_admin tersedia, kalau tidak buat fallback true
-if (!function_exists('_is_admin')) { function _is_admin(){ return true; } }
+// [SECURITY] Export data DB = sensitif. Wajib login admin (bukan lagi fallback `return true`).
+epoin_staff_guard(true);
+if (!function_exists('_is_admin')) { function _is_admin(){ return epoin_is_admin_session(); } }
 if (!_is_admin()) {
   http_response_code(403);
   exit('Forbidden');

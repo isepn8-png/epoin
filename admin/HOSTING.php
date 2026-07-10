@@ -2,9 +2,17 @@
 // admin/HOSTING.php atau hosting.php (nama apa pun) — aman case-sensitive
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../koneksi.php';
+require_once __DIR__ . '/../includes/epoin_security.php';
+
+// [SECURITY] Wajib login sebagai admin SEBELUM handler POST apa pun diproses.
+// Sebelumnya _is_admin() selalu mengembalikan true dan guard header.php baru
+// di-include di akhir file, sehingga POST (save_quota/rebuild/reset_usage) bisa
+// dieksekusi tanpa autentikasi. Guard ini menutup celah tersebut.
+epoin_staff_guard(true);
 
 // --------- util ----------
-if (!function_exists('_is_admin')) { function _is_admin(){ return true; } }
+// Guard admin nyata (lapis kedua di handler POST) — bukan lagi stub `return true`.
+if (!function_exists('_is_admin')) { function _is_admin(){ return epoin_is_admin_session(); } }
 function hs_esc($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function hs_i($v,$d=0){ return isset($v) && $v!=='' ? (int)$v : $d; }
 function hs_table_exists(mysqli $koneksi, string $table): bool {
@@ -109,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && _is_admin()){
   }
 
   if ($aksi==='reset_usage' && $HAS_ULOG && $HAS_UDAY){
-    $confirm=trim($_POST['confirm']??''); $pin6=trim($_POST['pin6']??''); $PIN='123456';
+    $confirm=trim($_POST['confirm']??''); $pin6=trim($_POST['pin6']??''); $PIN=(string) epoin_env('HOSTING_RESET_PIN','123456');
     if ($confirm!=='RESET' || $pin6!==$PIN){ hs_redirect($back.'&err=bad_confirm'); }
     $sid=(int)$sekolah_id;
     mysqli_query($koneksi,"DELETE FROM usage_daily WHERE sekolah_id=$sid AND `day` <> '".HS_BASELINE_DAY."'");

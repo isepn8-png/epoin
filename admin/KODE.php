@@ -2,6 +2,11 @@
 // admin/kode_generator.php
 if (session_status()===PHP_SESSION_NONE) session_start();
 require_once __DIR__.'/../koneksi.php';
+require_once __DIR__.'/../includes/epoin_security.php';
+
+// [SECURITY] Generator kode lisensi = sensitif. Wajib login admin sebelum akses.
+// PIN di bawah kini hanya faktor kedua (defense-in-depth), bukan satu-satunya gerbang.
+epoin_staff_guard(true);
 
 /* ===========================
    PIN GUARD (6 DIGIT)
@@ -9,7 +14,7 @@ require_once __DIR__.'/../koneksi.php';
    - Simpan status di session: $_SESSION['KG_PIN_OK']
    =========================== */
 $PIN_GUARD_ENABLED = true;
-$PIN_GUARD_SECRET  = '789789'; // <<< GANTI DI SINI (harus 6 digit)
+$PIN_GUARD_SECRET  = (string) epoin_env('KODE_PIN', '789789'); // set KODE_PIN di .env; fallback lama utk kompatibilitas
 if (!isset($_SESSION['KG_PIN_OK'])) $_SESSION['KG_PIN_OK'] = false;
 
 // optional: reset guard via ?reset_pin=1
@@ -36,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['pin_guard_submit'])) {
 $__PIN_UNLOCKED = $_SESSION['KG_PIN_OK'] || !$PIN_GUARD_ENABLED;
 
 // ===== Guard (hanya admin)
-if (!function_exists('_is_admin')) { function _is_admin(){ return true; } }
+if (!function_exists('_is_admin')) { function _is_admin(){ return epoin_is_admin_session(); } }
 if (!_is_admin()) { http_response_code(403); echo "Forbidden"; exit; }
 
 // ===== Helpers

@@ -45,7 +45,11 @@ if ($data) {
 }
 
 if ($login_ok && $data) {
-    session_start();
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+    // [SECURITY] Cegah session fixation: rotasi session id saat login siswa sukses.
+    session_regenerate_id(true);
 
     $siswa_id = (int) $data['siswa_id'];
 

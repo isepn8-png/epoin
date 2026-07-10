@@ -323,6 +323,9 @@ function do_login_with_role($username, $password, $login_as){
     ];
   }
 
+  // [SECURITY] Cegah session fixation: rotasi session id saat privilege naik (login sukses).
+  if (session_status() === PHP_SESSION_ACTIVE) { session_regenerate_id(true); }
+
   // Set session utama (+ RBAC lengkap)
   $ok = bootstrap_rbac_for_user_id((int)$user['user_id']);
   if (!$ok){

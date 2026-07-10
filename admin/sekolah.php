@@ -3,9 +3,14 @@
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../koneksi.php';
+require_once __DIR__ . '/../includes/epoin_security.php';
+
+// [SECURITY] Wajib login admin SEBELUM handler POST (save_profile/save_license/db_clear).
+// Sebelumnya _is_admin() selalu true & guard header.php baru di akhir file → bisa dieksekusi tanpa login.
+epoin_staff_guard(true);
 
 // ---- Fallback role check kalau helper belum ada
-if (!function_exists('_is_admin')) { function _is_admin(){ return true; } }
+if (!function_exists('_is_admin')) { function _is_admin(){ return epoin_is_admin_session(); } }
 
 // ---- Helper kecil
 function esc($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }

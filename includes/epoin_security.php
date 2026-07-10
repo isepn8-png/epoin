@@ -15,6 +15,16 @@ function epoin_h($value): string
 function epoin_ensure_session(): void
 {
     if (session_status() !== PHP_SESSION_ACTIVE) {
+        // [SECURITY] Hardening cookie session bila kita yang memulai sesi.
+        if (PHP_VERSION_ID >= 70300 && !headers_sent()) {
+            @session_set_cookie_params([
+                'lifetime' => 0,
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+                'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            ]);
+        }
         session_start();
     }
 }
