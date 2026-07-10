@@ -49,7 +49,20 @@ $stages = epoin_sp_stages($koneksi);
 
 include 'header.php';
 ?>
-<section class="content" style="padding:16px;">
+<div class="content-wrapper">
+
+  <section class="content-header">
+    <h1>
+      <i class="fa fa-sliders"></i> Pengaturan Ambang SP
+      <small>Surat Peringatan</small>
+    </h1>
+    <ol class="breadcrumb">
+      <li><a href="index.php"><i class="fa fa-home"></i> Home</a></li>
+      <li class="active">Ambang SP</li>
+    </ol>
+  </section>
+
+  <section class="content">
   <div class="row">
     <div class="col-lg-10 col-md-12">
 
@@ -123,5 +136,7 @@ include 'header.php';
 
     </div>
   </div>
-</section>
+  </section>
+
+</div><!-- /.content-wrapper -->
 <?php include 'footer.php'; ?>
