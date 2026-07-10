@@ -28,7 +28,7 @@ $__spDesc = [
 ];
 
 $__jenjangTiers = [[
-  'label'=>'Aman','range'=>'0 poin negatif','sp'=>null,'spCls'=>'','prog'=>'Apresiasi / Monitoring','color'=>'#22c55e',
+  'label'=>'Aman','roman'=>null,'range'=>'0 poin negatif','sp'=>null,'spCls'=>'','prog'=>'Apresiasi / Monitoring','color'=>'#22c55e',
   'sub'=>'Saldo poin aman. Tidak ada tindakan pembinaan yang diperlukan saat ini.',
   'tindakan'=>'Tidak ada tindakan pembinaan. Kondisi ini mencerminkan perilaku baik.',
   'tujuan'=>'Menjaga saldo poin tetap positif dan terus meningkatkan prestasi.',
@@ -48,6 +48,7 @@ foreach ($__spStages as $__st) {
   ];
   $__jenjangTiers[] = [
     'label'   => 'Tingkat ' . $__st['roman'],
+    'roman'   => (string)$__st['roman'],
     'range'   => $__rangeTxt,
     'sp'      => $__sp,
     'spCls'   => $__sp ? ('jst-chip-sp' . min(max($__n, 1), 4)) : '',
@@ -248,62 +249,16 @@ foreach ($__spStages as $__st) {
           </div>
 
           <ul class="jst-steps" id="jstSteps">
-            <li class="jst-step<?php echo $levelActive === 0 ? ' is-current' : ''; ?>" data-step="0" style="--sc:#22c55e">
-              <div class="jst-node"><i class="fa fa-check" aria-hidden="true"></i></div>
+            <?php foreach ($__jenjangTiers as $__i => $__t): ?>
+            <li class="jst-step<?php echo $levelActive === $__i ? ' is-current' : ''; ?>" data-step="<?php echo (int)$__i; ?>" style="--sc:<?php echo epoin_h((string)$__t['color']); ?>">
+              <div class="jst-node"><?php echo $__t['roman'] === null ? '<i class="fa fa-check" aria-hidden="true"></i>' : epoin_h((string)$__t['roman']); ?></div>
               <div class="jst-lbl">
-                <span class="jst-lbl-name">Aman</span>
-                <span class="jst-lbl-range">0 poin negatif</span>
-                <?php if ($levelActive === 0) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
+                <span class="jst-lbl-name"><?php echo epoin_h((string)$__t['label']); ?></span>
+                <span class="jst-lbl-range"><?php echo epoin_h((string)$__t['range']); ?></span>
+                <?php if ($levelActive === $__i) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
               </div>
             </li>
-            <li class="jst-step<?php echo $levelActive === 1 ? ' is-current' : ''; ?>" data-step="1" style="--sc:#10b981">
-              <div class="jst-node">I</div>
-              <div class="jst-lbl">
-                <span class="jst-lbl-name">Tingkat I</span>
-                <span class="jst-lbl-range">1–20 poin</span>
-                <?php if ($levelActive === 1) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
-              </div>
-            </li>
-            <li class="jst-step<?php echo $levelActive === 2 ? ' is-current' : ''; ?>" data-step="2" style="--sc:#f59e0b">
-              <div class="jst-node">II</div>
-              <div class="jst-lbl">
-                <span class="jst-lbl-name">Tingkat II</span>
-                <span class="jst-lbl-range">21–40 poin</span>
-                <?php if ($levelActive === 2) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
-              </div>
-            </li>
-            <li class="jst-step<?php echo $levelActive === 3 ? ' is-current' : ''; ?>" data-step="3" style="--sc:#f97316">
-              <div class="jst-node">III</div>
-              <div class="jst-lbl">
-                <span class="jst-lbl-name">Tingkat III</span>
-                <span class="jst-lbl-range">41–60 poin</span>
-                <?php if ($levelActive === 3) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
-              </div>
-            </li>
-            <li class="jst-step<?php echo $levelActive === 4 ? ' is-current' : ''; ?>" data-step="4" style="--sc:#ef4444">
-              <div class="jst-node">IV</div>
-              <div class="jst-lbl">
-                <span class="jst-lbl-name">Tingkat IV</span>
-                <span class="jst-lbl-range">61–80 poin</span>
-                <?php if ($levelActive === 4) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
-              </div>
-            </li>
-            <li class="jst-step<?php echo $levelActive === 5 ? ' is-current' : ''; ?>" data-step="5" style="--sc:#b91c1c">
-              <div class="jst-node">V</div>
-              <div class="jst-lbl">
-                <span class="jst-lbl-name">Tingkat V</span>
-                <span class="jst-lbl-range">81–99 poin</span>
-                <?php if ($levelActive === 5) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
-              </div>
-            </li>
-            <li class="jst-step<?php echo $levelActive === 6 ? ' is-current' : ''; ?>" data-step="6" style="--sc:#7f1d1d">
-              <div class="jst-node">VI</div>
-              <div class="jst-lbl">
-                <span class="jst-lbl-name">Tingkat VI</span>
-                <span class="jst-lbl-range">≥100 poin</span>
-                <?php if ($levelActive === 6) echo '<span class="jst-now-badge">Saat ini</span>'; ?>
-              </div>
-            </li>
+            <?php endforeach; ?>
           </ul>
         </div>
 

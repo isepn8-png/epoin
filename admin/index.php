@@ -186,8 +186,13 @@ if($qrank){
   mysqli_free_result($qrank);
 }
 
-/* ======== SP DISTRIBUTION & EARLY WARNING (per TA terpilih) ======== */
-$spDist = ['aman'=>0,'pembinaan'=>0,'sp1'=>0,'sp2'=>0,'sp3'=>0,'sp4'=>0];
+/* ======== SP DISTRIBUTION & EARLY WARNING (per TA terpilih) — ambang dari config ======== */
+require_once __DIR__ . '/../includes/epoin_sp_helpers.php';
+$spThr        = epoin_sp_thresholds($koneksi);   // ['SP1'=>..,'SP2'=>..,...] proporsional dari skala
+$spLevelsList = array_keys($spThr);              // SP1..SPn urut naik
+$WARN_WINDOW  = 5;                               // poin sebelum ambang berikutnya -> early warning
+$spDist = ['aman'=>0,'pembinaan'=>0];
+foreach ($spLevelsList as $__l) { $spDist[strtolower($__l)] = 0; }
 $earlyWarning = [];
 
 $qSaldo = db_query($koneksi, "
@@ -217,37 +222,30 @@ if ($qSaldo) {
   while ($r = mysqli_fetch_assoc($qSaldo)) {
     $saldo = (int)$r['saldo'];
     $neg   = max(0, -$saldo);
-    if ($neg === 0) {
-      $spDist['aman']++;
-    } elseif ($neg <= 20) {
-      $spDist['pembinaan']++;
-      if ($neg >= 16) {
-        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP1','jarak'=>21-$neg];
+    if ($neg === 0) { $spDist['aman']++; continue; }
+
+    // Bucket: level SP tertinggi yang ambangnya sudah tercapai (null = masih pembinaan umum)
+    $reached = null;
+    foreach ($spLevelsList as $__l) { if ($neg >= $spThr[$__l]) { $reached = $__l; } }
+    if ($reached === null) { $spDist['pembinaan']++; }
+    else { $spDist[strtolower($reached)]++; }
+
+    // Early warning: mendekati ambang berikutnya (dalam $WARN_WINDOW poin)
+    foreach ($spLevelsList as $__l) {
+      $t = $spThr[$__l];
+      if ($neg < $t) {
+        if ($neg >= $t - $WARN_WINDOW) {
+          $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>$__l,'jarak'=>$t-$neg];
+        }
+        break; // cukup ambang berikutnya yang terdekat
       }
-    } elseif ($neg <= 40) {
-      $spDist['sp1']++;
-      if ($neg >= 36) {
-        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP2','jarak'=>41-$neg];
-      }
-    } elseif ($neg <= 60) {
-      $spDist['sp2']++;
-      if ($neg >= 56) {
-        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP3','jarak'=>61-$neg];
-      }
-    } elseif ($neg <= 80) {
-      $spDist['sp3']++;
-      if ($neg >= 76) {
-        $earlyWarning[] = ['siswa_id'=>(int)$r['siswa_id'],'siswa_nama'=>$r['siswa_nama'],'siswa_nis'=>$r['siswa_nis'],'saldo'=>$saldo,'mendekati'=>'SP4','jarak'=>81-$neg];
-      }
-    } else {
-      $spDist['sp4']++;
     }
   }
   mysqli_free_result($qSaldo);
 }
 usort($earlyWarning, function($a,$b){ return $a['jarak'] - $b['jarak']; });
 $EW_COUNT = count($earlyWarning);
-$SP_AKTIF = $spDist['sp1'] + $spDist['sp2'] + $spDist['sp3'] + $spDist['sp4'];
+$SP_AKTIF = 0; foreach ($spLevelsList as $__l) { $SP_AKTIF += ($spDist[strtolower($__l)] ?? 0); }
 
 /* ======== SP TERBIT dari sp_log — scope: tahun pertama TA aktif ======== */
 $spTerbit = ['sp1'=>0,'sp2'=>0,'sp3'=>0,'sp4'=>0];

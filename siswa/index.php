@@ -231,8 +231,8 @@ $scaleMaxSaldo = max(100, abs($saldo));
 $percentSaldo  = $scaleMaxSaldo > 0 ? min(100, round(abs($saldo) / $scaleMaxSaldo * 100)) : 0;
 $isPos         = $saldo >= 0;
 
-/* — Risiko sanksi — */
-$riskPercent = max(0, min(100, -$saldo));
+/* — Risiko sanksi (persen relatif terhadap skala maksimal yang dikonfigurasi) — */
+$riskPercent = ($scaleMax > 0) ? max(0, min(100, (int) round(-$saldo / $scaleMax * 100))) : 0;
 $stageColor  = $currentStage['color'] ?? '#10b981';
 
 /* — Target aman — */
