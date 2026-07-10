@@ -1280,6 +1280,14 @@ $openRaporSTS = ($isSTS || $isDeskripsi);
           <?php endif; ?>
 
           <li class="header" role="presentation">PENGATURAN</li>
+          <?php if (function_exists('epoin_is_admin_session') && epoin_is_admin_session()): ?>
+          <li role="treeitem">
+            <a href="pengaturan_sp.php" title="Ambang Surat Peringatan (SP)" aria-label="Ambang Surat Peringatan">
+              <span class="menu-ic"><i class="fa-solid fa-sliders"></i></span>
+              <span class="menu-text">Ambang SP</span>
+            </a>
+          </li>
+          <?php endif; ?>
           <li role="treeitem">
             <a href="gantipassword.php" title="Ganti Password" aria-label="Ganti Password">
               <span class="menu-ic"><i class="fa-solid fa-key"></i></span>
