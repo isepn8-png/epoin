@@ -501,7 +501,7 @@ $trendJson = json_encode($trendPoints, JSON_UNESCAPED_UNICODE);
 
               <!-- Progres Poin Siswa (berdasarkan SALDO) & Tingkat Pembinaan -->
               <?php
-                $riskPercent = max(0, min(100, -$saldo)); // hanya saldo negatif
+                $riskPercent = ($scaleMax > 0) ? max(0, min(100, (int) round(-$saldo / $scaleMax * 100))) : 0; // relatif ke skala maksimal
                 $stageColor  = $currentStage['color'] ?? '#10b981';
               ?>
               <div class="row" style="margin-top:14px;">
