@@ -455,7 +455,7 @@ $trendJson = json_encode($trendPoints, JSON_UNESCAPED_UNICODE);
 
               <!-- Progres Saldo Poin (pusat = 0) -->
               <?php
-                $scaleMaxSaldo = max(100, abs($saldo));
+                $scaleMaxSaldo = max($scaleMax, abs($saldo)); // batas meter bipolar ikut skala config
                 $percentSaldo = $scaleMaxSaldo > 0 ? min(100, round(abs($saldo) / $scaleMaxSaldo * 100)) : 0;
                 $isPos = $saldo >= 0;
               ?>

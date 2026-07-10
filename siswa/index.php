@@ -227,7 +227,7 @@ if($qlast){ $last = mysqli_fetch_assoc($qlast); }
 $spStatus = epoin_sp_status_for($negSaldo, $koneksi) ?? 'Belum SP';
 
 /* — Visual progres saldo — */
-$scaleMaxSaldo = max(100, abs($saldo));
+$scaleMaxSaldo = max($scaleMax, abs($saldo)); // batas meter bipolar ikut skala config (mis. ±200)
 $percentSaldo  = $scaleMaxSaldo > 0 ? min(100, round(abs($saldo) / $scaleMaxSaldo * 100)) : 0;
 $isPos         = $saldo >= 0;
 
@@ -557,9 +557,9 @@ $toSafe = $saldo < 0 ? abs($saldo) : 0;
                 <span id="hmThumb" class="hm-thumb<?php echo $saldo<0? ' negative':''; ?>"></span>
               </div>
               <div class="hm-legend">
-                <span>−100</span>
+                <span>−<?php echo (int)$scaleMaxSaldo; ?></span>
                 <span><b>0</b></span>
-                <span>+100</span>
+                <span>+<?php echo (int)$scaleMaxSaldo; ?></span>
               </div>
 
               <!-- Mini cards: Target & Tips -->
@@ -1173,25 +1173,28 @@ document.addEventListener('DOMContentLoaded', function(){
     var fillN = document.getElementById('hmFillNeg');
     var safeF = document.getElementById('safeFill');
 
+    var HM_MAX = <?php echo (int)$scaleMaxSaldo; ?>;                 // batas meter mengikuti skala config SP
+    var hmPct  = function(v){ return Math.min(100, Math.round(Math.abs(v) / HM_MAX * 100)); };
+    var hmOff  = function(v){ return Math.min(50,  Math.abs(v) / HM_MAX * 50); };
     if(saldo >= 0){
       fillP.style.width = '0';
-      setTimeout(function(){ fillP.style.width = Math.min(100, saldo) + '%'; }, 60);
+      setTimeout(function(){ fillP.style.width = hmPct(saldo) + '%'; }, 60);
       if(thumb){
         thumb.classList.remove('negative');
         thumb.style.left = '50%';
         setTimeout(function(){
-          thumb.style.left = (50 + Math.min(50, saldo/2)) + '%';
+          thumb.style.left = (50 + hmOff(saldo)) + '%';
           thumb.classList.add('pulse');
         }, 80);
       }
     }else{
       fillN.style.width = '0';
-      setTimeout(function(){ fillN.style.width = Math.min(100, Math.abs(saldo)) + '%'; }, 60);
+      setTimeout(function(){ fillN.style.width = hmPct(saldo) + '%'; }, 60);
       if(thumb){
         thumb.classList.add('negative');
         thumb.style.left = '50%';
         setTimeout(function(){
-          thumb.style.left = (50 - Math.min(50, Math.abs(saldo)/2)) + '%';
+          thumb.style.left = (50 - hmOff(saldo)) + '%';
           thumb.classList.add('pulse');
         }, 80);
       }
@@ -1202,9 +1205,9 @@ document.addEventListener('DOMContentLoaded', function(){
       var toSafe = <?php echo (int)$toSafe; ?>;
       var w = 0;
       if(<?php echo $saldo<0 ? 'true':'false'; ?>){
-        w = Math.min(100, Math.round((100 - Math.min(100,toSafe))));
+        w = Math.max(0, 100 - hmPct(toSafe));
       }else{
-        w = Math.min(100, Math.round(Math.min(100, saldo)));
+        w = hmPct(saldo);
       }
       setTimeout(function(){ safeF.style.width = w + '%'; }, 150);
     }
