@@ -139,7 +139,7 @@ function epoin_sp_stages(?mysqli $koneksi = null): array
             'roman'   => $romans[$k] ?? (string) ($k + 1),
             'min'     => $lo,
             'max'     => $hi,
-            'program' => ($k === $L) ? 'Konferensi Kasus' : 'Pembinaan Bertingkat ' . $k,
+            'program' => (['Pembinaan Umum & Panggilan Orang Tua', 'Pembinaan BK & Rencana Perbaikan', 'Pembinaan Khusus Terpadu', 'Konferensi Kasus'][$k - 1] ?? ('Pembinaan Lanjutan ' . $k)),
             'action'  => 'Peringatan ' . $k . ' (SP' . $k . ')',
             'sp'      => 'SP' . $k,
             'color'   => $palette[($k - 1) % count($palette)],
