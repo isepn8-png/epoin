@@ -1,5 +1,8 @@
 <?php
-// ===== login.php — Unified Login UI (bright blue gradient, judul statis, ikon & caret) =====
+// ===== login.php — Unified Login UI (bright blue gradient, ikon & caret) =====
+// Logo & nama sekolah dinamis dari DB (tabel `sekolah`) via theme_brand.php — mendukung multi-sekolah.
+require_once __DIR__ . '/koneksi.php';
+require_once __DIR__ . '/includes/theme_brand.php';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -569,10 +572,10 @@
     </div>
 
     <div class="brand">
-      <img src="gambar/sistem/logonesagun.png" alt="Logo" class="animated-logo">
+      <img src="<?php echo htmlspecialchars($THEME_BRAND['logo'] ?? 'gambar/sistem/logonesagun.png', ENT_QUOTES, 'UTF-8'); ?>" alt="Logo" class="animated-logo">
       <h2 class="brand-title animate__animated animate__fadeInDown" id="brandTitle">
         <span class="title-line">E-POIN Suite</span>
-        <span class="title-line">SMPN 1 GUNUNGTANJUNG</span>
+        <span class="title-line"><?php echo htmlspecialchars(strtoupper((string)($THEME_BRAND['subtitle'] ?? 'Sekolah')), ENT_QUOTES, 'UTF-8'); ?></span>
       </h2>
     </div>
 
