@@ -3,6 +3,20 @@
 // Logo & nama sekolah dinamis dari DB (tabel `sekolah`) via theme_brand.php — mendukung multi-sekolah.
 require_once __DIR__ . '/koneksi.php';
 require_once __DIR__ . '/includes/theme_brand.php';
+
+// Tombol "Beranda" (link situs sekolah asal) & "Tentang Aplikasi" bisa dimatikan
+// per-instalasi via app_meta (default: TAMPIL, agar instalasi lama tak berubah).
+$__login_show_home_btn = true;
+$__login_show_about_btn = true;
+if (isset($koneksi) && $koneksi instanceof mysqli) {
+    $q = @mysqli_query($koneksi, "SELECT meta_key, meta_value FROM app_meta WHERE meta_key IN ('login_show_home_btn','login_show_about_btn')");
+    if ($q) {
+        while ($r = mysqli_fetch_assoc($q)) {
+            if ($r['meta_key'] === 'login_show_home_btn')  { $__login_show_home_btn  = ($r['meta_value'] !== '0'); }
+            if ($r['meta_key'] === 'login_show_about_btn') { $__login_show_about_btn = ($r['meta_value'] !== '0'); }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -643,16 +657,20 @@ require_once __DIR__ . '/includes/theme_brand.php';
       <p class="help text-center">Tekan <b>Enter</b> untuk masuk. Pastikan memilih peran yang tepat.</p>
 
       <div class="footer-links">
+        <?php if ($__login_show_home_btn): ?>
         <!-- ELEGAN: ikon-only Beranda TARTIB -->
         <a class="home-btn icon-only" href="https://smpn1gunungtanjung.sch.id/tartib" target="_self" title="Beranda TARTIB">
           <i class="fa fa-home"></i>
         </a>
+        <?php endif; ?>
+        <?php if ($__login_show_about_btn): ?>
         <!-- INTERAKTIF: Tentang Aplikasi (memanggil modal include) -->
         <button type="button" class="btn btn-xs about-btn" data-toggle="modal" data-target="#epoinAboutModal" title="Tentang aplikasi">
-         
+
           <span class="label">Tentang Aplikasi</span>
           <span class="glow" aria-hidden="true"></span>
         </button>
+        <?php endif; ?>
       </div>
     </form>
 
