@@ -25,7 +25,7 @@
           </div>
           <div style="float:right; text-align:right">
             <div style="font-size:12px; opacity:.9">Sekolah</div>
-            <div style="font-weight:700">SMPN 1 GUNUNGTANJUNG</div>
+            <div style="font-weight:700"><?php echo htmlspecialchars((string)($THEME_BRAND['subtitle'] ?? 'Sekolah'), ENT_QUOTES, 'UTF-8'); ?></div>
           </div>
         </div>
       </div>
