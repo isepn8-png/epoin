@@ -188,6 +188,21 @@ if (function_exists('count_table')) {
                 <button type="button" class="btn btn-add btn-sm" data-toggle="modal" data-target="#modal_pelanggaran" id="btnAddPelanggaran">
                   <i class="fa fa-plus"></i> &nbsp;Tambah Pelanggaran Baru
                 </button>
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_import_pelanggaran">
+                  <i class="fa fa-file-excel-o"></i> &nbsp;Import Excel
+                </button>
+                <form method="post" action="kategori_import_act.php" style="display:inline" onsubmit="return confirm('Tambahkan daftar pelanggaran rekomendasi (referensi dari EPOIN) ke daftar Anda? Nama yang sudah ada akan dilewati.');">
+                  <?php echo epoin_csrf_field(); ?>
+                  <input type="hidden" name="jenis" value="pelanggaran">
+                  <input type="hidden" name="aksi" value="muat_rekomendasi">
+                  <button type="submit" class="btn btn-default btn-sm" data-toggle="tooltip" title="Tanam daftar referensi kurasi EPOIN"><i class="fa fa-magic"></i> &nbsp;Muat Rekomendasi</button>
+                </form>
+                <form method="post" action="kategori_import_act.php" style="display:inline" onsubmit="return confirm('Hapus SEMUA kategori pelanggaran yang BELUM terpakai? Kategori yang sudah dipakai pada data poin siswa tetap dipertahankan.');">
+                  <?php echo epoin_csrf_field(); ?>
+                  <input type="hidden" name="jenis" value="pelanggaran">
+                  <input type="hidden" name="aksi" value="hapus_semua">
+                  <button type="submit" class="btn btn-danger btn-sm" data-toggle="tooltip" title="Hapus semua kategori yang belum terpakai"><i class="fa fa-trash"></i> &nbsp;Hapus Semua</button>
+                </form>
               <?php else: ?>
                 <!-- NON-ADMIN: tombol non-aktif -->
                 <button type="button" class="btn btn-add btn-sm btn-disabled" data-toggle="tooltip" title="Hanya admin yang dapat menambah pelanggaran" disabled>
@@ -206,6 +221,40 @@ if (function_exists('count_table')) {
                   <option value="poin_asc" selected>Urut Poin (Rendah → Tinggi)</option> <!-- REVISI: default selected -->
                   <option value="poin_desc">Urut Poin (Tinggi → Rendah)</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Import Excel -->
+          <div class="modal fade" id="modal_import_pelanggaran" tabindex="-1" role="dialog">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header" style="background:linear-gradient(90deg,#dbeafe,#fff); border-bottom:1px solid #bfdbfe;">
+                  <button type="button" class="close" data-dismiss="modal">&times;</button>
+                  <h4 class="modal-title"><i class="fa fa-file-excel-o" style="color:#2563eb"></i> Import Pelanggaran dari Excel</h4>
+                </div>
+                <form action="kategori_import_act.php" method="post" enctype="multipart/form-data" autocomplete="off">
+                  <div class="modal-body">
+                    <?php echo epoin_csrf_field(); ?>
+                    <input type="hidden" name="jenis" value="pelanggaran">
+                    <input type="hidden" name="aksi" value="import_excel">
+                    <ol style="padding-left:18px; color:#334155; font-size:13px;">
+                      <li>Unduh template dulu:
+                        <a href="kategori_template.php?jenis=pelanggaran" class="btn btn-xs btn-default"><i class="fa fa-download"></i> Template Excel</a>
+                      </li>
+                      <li>Isi kolom <b>A = Nama Kategori</b>, <b>B = Poin</b> (angka positif; tanda minus otomatis). Baris 1 judul.</li>
+                      <li>Simpan lalu unggah di sini. Nama yang sudah ada otomatis dilewati.</li>
+                    </ol>
+                    <div class="form-group">
+                      <label>Pilih file (.xlsx / .xls / .csv, maks 5 MB)</label>
+                      <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-upload"></i> Unggah &amp; Import</button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
