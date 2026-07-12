@@ -1295,6 +1295,14 @@ $openRaporSTS = ($isSTS || $isDeskripsi);
             </a>
           </li>
 
+          <li class="header" role="presentation">BANTUAN</li>
+          <li role="treeitem">
+            <a href="panduan_pemakaian.php" title="Panduan Pemakaian" aria-label="Panduan Pemakaian">
+              <span class="menu-ic"><i class="fa-solid fa-circle-question"></i></span>
+              <span class="menu-text">Panduan Pemakaian</span>
+            </a>
+          </li>
+
         <?php endif; ?>
 
       </ul>
