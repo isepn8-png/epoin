@@ -37,14 +37,19 @@ if (isset($koneksi) && $koneksi instanceof mysqli) {
 /* ==== RESOLUSI PATH RELATIF/ABSOLUT ==== */
 $REL = (strpos($_SERVER['SCRIPT_NAME'],'/admin/')!==false || strpos($_SERVER['SCRIPT_NAME'],'/siswa/')!==false) ? '../' : './';
 
-if ($__tb_logo_path) {
-  // Jika bukan http/https, perlakukan sebagai file di /gambar/sistem/
-  if (!preg_match('~^https?://~i', $__tb_logo_path)) {
-    $__tb_logo_path = $REL.'gambar/sistem/'.ltrim($__tb_logo_path, '/');
-  }
+if ($__tb_logo_path && preg_match('~^https?://~i', $__tb_logo_path)) {
+  // Logo berupa URL absolut — pakai apa adanya.
 } else {
-  // Default logo jika DB belum punya logo
-  $__tb_logo_path = $REL.'gambar/sistem/logonesagun.png';
+  // Logo berupa nama file di /gambar/sistem/. Ambil basename saja (cegah path traversal),
+  // lalu pastikan file-nya benar-benar ADA di disk. Jika hilang / kolom kosong,
+  // fallback ke logo default agar tidak muncul gambar rusak (broken image).
+  $__tb_logo_file = $__tb_logo_path ? basename($__tb_logo_path) : '';
+  $__tb_logo_fs   = __DIR__ . '/../gambar/sistem/' . $__tb_logo_file;
+  if ($__tb_logo_file !== '' && is_file($__tb_logo_fs)) {
+    $__tb_logo_path = $REL.'gambar/sistem/'.$__tb_logo_file;
+  } else {
+    $__tb_logo_path = $REL.'gambar/sistem/logonesagun.png';
+  }
 }
 
 /* ==== OBJEK BRAND UTAMA (boleh dioverride sebelum render) ==== */
