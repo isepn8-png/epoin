@@ -419,7 +419,7 @@ if($qa){
   .sp-strip-item:hover{background:#f8fafc}
   a.sp-strip-item:hover{background:#f0f7ff}
   .sp-strip-num{font-size:clamp(16px,2.6vw,24px);font-weight:900;line-height:1;letter-spacing:-.5px}
-  .sp-strip-lbl{font-size:9px;font-weight:700;color:var(--c-muted);letter-spacing:.04em;text-transform:uppercase;margin-top:3px;white-space:nowrap}
+  .sp-strip-lbl{font-size:10.5px;font-weight:700;color:var(--c-muted);letter-spacing:.03em;text-transform:uppercase;margin-top:4px;white-space:nowrap}
   .sp-strip-sep{width:1px;background:var(--c-border);align-self:stretch;flex-shrink:0}
   .sp-strip-item.sc-amber{border-top-color:#d97706}.sc-amber .sp-strip-num{color:#d97706}
   .sp-strip-item.sc-orange{border-top-color:#f97316}.sc-orange .sp-strip-num{color:#f97316}
@@ -625,11 +625,17 @@ if($qa){
 .toggle-sekretaris input:checked{background:#2563eb}
 .toggle-sekretaris input:checked::after{transform:translateX(16px)}
 
-/* ===== ZONE HEADERS (section dividers) ===== */
-.zone-header{display:flex;align-items:center;gap:10px;margin:22px 0 12px}
+/* ===== ZONE HEADERS (section dividers) — dipoles jadi chip lebih menonjol ===== */
+.zone-header{display:flex;align-items:center;gap:12px;margin:28px 0 14px}
 .zone-header .zl{flex:1;height:1px;background:linear-gradient(90deg,var(--c-border),transparent)}
 .zone-header .zl-r{flex:1;height:1px;background:linear-gradient(270deg,var(--c-border),transparent)}
-.zone-header .zone-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted);white-space:nowrap;padding:0 6px;display:flex;align-items:center;gap:5px}
+.zone-header .zone-label{
+  font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#334155;white-space:nowrap;padding:6px 14px;display:flex;align-items:center;gap:7px;
+  background:#fff;border:1px solid var(--c-border);border-radius:999px;
+  box-shadow:0 1px 3px rgba(15,23,42,.05);
+}
+.zone-header .zone-label i{color:var(--c-primary);font-size:13px}
 
 /* ===== EW ALERT BANNER (hero) ===== */
 .ew-banner{
@@ -859,9 +865,9 @@ if($qa){
         </div>
         <div class="sp-strip-sep"></div>
         <?php $ewSC = ($EW_COUNT > 0) ? 'sc-ew-danger' : 'sc-ew-safe'; ?>
-        <a href="#zone-sp" class="sp-strip-item <?php echo $ewSC; ?>">
+        <a href="#zone-sp" class="sp-strip-item <?php echo $ewSC; ?>" title="Early Warning — siswa mendekati ambang SP berikutnya">
           <div class="sp-strip-num" data-count="<?php echo $EW_COUNT; ?>">0</div>
-          <div class="sp-strip-lbl"><i class="fa fa-bolt" style="font-size:7px"></i> EW</div>
+          <div class="sp-strip-lbl">Waspada</div>
         </a>
       </div>
     </div>
@@ -885,7 +891,11 @@ if($qa){
           <div class="box-body sp-donut-body">
             <?php $totalSiswaKelas = array_sum($spDist); ?>
             <?php if ($totalSiswaKelas === 0): ?>
-              <p class="text-center text-muted" style="padding:20px">Belum ada data siswa pada TA ini.</p>
+              <div class="text-center" style="padding:30px 20px;color:#94a3b8;margin:auto">
+                <i class="fa fa-pie-chart fa-3x" style="color:#cbd5e1"></i><br>
+                <span style="margin-top:10px;display:block;font-weight:600;color:#64748b">Belum ada data siswa pada TA ini.</span>
+                <span style="font-size:12px;color:#94a3b8">Distribusi tahap SP akan tampil begitu ada data poin siswa.</span>
+              </div>
             <?php else: ?>
               <div id="spDonut" style="min-height:260px"></div>
               <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px">
@@ -1069,7 +1079,7 @@ if($qa){
         <!-- Highcharts container -->
         <div id="trendHC" class="hc-area" aria-label="Tren Bulanan Pelanggaran & Prestasi" role="img"></div>
 
-        <?php if (empty($months)) { echo '<p class="text-center" style="margin:10px 0;color:#64748b">Belum ada data untuk TA ini.</p>'; } ?>
+        <?php if (empty($months)) { echo '<div class="text-center" style="padding:30px 20px;color:#94a3b8;margin:auto"><i class="fa fa-chart-line fa-3x" style="color:#cbd5e1"></i><br><span style="margin-top:10px;display:block;font-weight:600;color:#64748b">Belum ada data untuk TA ini.</span><span style="font-size:12px;color:#94a3b8">Tren bulanan akan tampil begitu ada data poin siswa.</span></div>'; } ?>
       </div>
     </div>
 
