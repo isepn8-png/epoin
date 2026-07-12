@@ -151,6 +151,77 @@ if (function_exists('count_table')) {
     .badge-point{ min-width:72px; padding:3px 10px; font-size:12px; }
     #table-datatable .btn.btn-sm{ padding:4px 8px; }
   }
+
+  /* ===== Import Excel/CSV — modal enterprise 2-panel (dipakai jg di prestasi.php) ===== */
+  :root{ --kimp-accent: var(--v-red-600,#dc2626); --kimp-accent-soft: var(--v-red-50,#fef2f2); --kimp-accent-line: var(--v-red-200,#fecaca); }
+  .kimp-content{ border-radius:16px; overflow:hidden; border:none; }
+  .kimp-header{
+    display:flex; align-items:center; gap:12px; padding:16px 20px;
+    background:linear-gradient(100deg,var(--kimp-accent),color-mix(in srgb, var(--kimp-accent) 55%, #0f172a));
+    background:var(--kimp-accent); color:#fff;
+  }
+  .kimp-header .kimp-title{ font-size:16px; font-weight:800; margin-left:6px; }
+  .kimp-header .fa-upload{ font-size:20px; }
+  .kimp-badges{ margin-left:auto; display:flex; gap:6px; }
+  .kimp-badge{ background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:3px 11px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .kimp-header .close{ color:#fff; opacity:.85; text-shadow:none; margin-left:8px; }
+  .kimp-header .close:hover{ opacity:1; }
+  .kimp-body{ padding:16px 20px 20px; background:#fffbfb; }
+  .kimp-hint{ background:var(--kimp-accent-soft); border:1px solid var(--kimp-accent-line); border-radius:10px; padding:9px 14px; font-size:12.5px; color:#334155; margin-bottom:14px; display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+  .kimp-hint code{ background:#fff; border:1px solid #e2e8f0; padding:1px 6px; border-radius:5px; color:var(--kimp-accent); font-weight:700; }
+  .kimp-tpl-link{ margin-left:auto; font-weight:700; font-size:12px; color:var(--kimp-accent); text-decoration:none; background:#fff; border:1px solid var(--kimp-accent-line); border-radius:999px; padding:4px 12px; white-space:nowrap; }
+  .kimp-tpl-link:hover{ background:var(--kimp-accent-soft); text-decoration:none; color:var(--kimp-accent); }
+
+  .kimp-grid{ display:grid; grid-template-columns:280px 1fr; gap:18px; }
+  @media(max-width:700px){ .kimp-grid{ grid-template-columns:1fr; } }
+
+  .kimp-drop{
+    border:2px dashed #cbd5e1; border-radius:12px; padding:22px 12px; text-align:center; cursor:pointer;
+    background:#fff; transition:.15s ease; color:#94a3b8;
+  }
+  .kimp-drop:hover, .kimp-drop-active{ border-color:var(--kimp-accent); background:var(--kimp-accent-soft); color:var(--kimp-accent); }
+  .kimp-drop .fa{ font-size:28px; margin-bottom:6px; display:block; }
+  .kimp-drop-text{ font-weight:700; font-size:13px; color:#334155; }
+  .kimp-drop-sub{ font-size:11px; color:#94a3b8; margin-top:2px; }
+  .kimp-filename{ display:none; align-items:center; gap:8px; margin-top:8px; padding:7px 12px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; font-size:12px; color:#334155; font-weight:600; }
+  .kimp-filename:before{ content:"\f15c"; font-family:FontAwesome; color:var(--kimp-accent); }
+
+  .kimp-field{ margin-top:14px; }
+  .kimp-field label{ font-size:12.5px; font-weight:700; color:#334155; display:flex; align-items:center; gap:5px; margin-bottom:4px; }
+  .kimp-field label i{ color:#94a3b8; font-size:12px; cursor:help; }
+  .kimp-help{ display:block; color:#94a3b8; font-size:11px; margin-top:3px; }
+
+  .kimp-actions{ display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+  .kimp-actions .btn{ border-radius:9px; font-weight:700; font-size:13px; padding:9px 14px; text-align:left; }
+  .kimp-btn-preview{ background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+  .kimp-btn-preview:hover{ background:#dbeafe; color:#1d4ed8; }
+  .kimp-btn-exec{ background:var(--kimp-accent); color:#fff; border:1px solid var(--kimp-accent); }
+  .kimp-btn-exec:hover:not(:disabled){ filter:brightness(1.06); color:#fff; }
+  .kimp-btn-exec:disabled{ opacity:.45; cursor:not-allowed; }
+  .kimp-btn-reset{ background:#fff; color:#64748b; border:1px solid #e2e8f0; font-weight:600; }
+  .kimp-btn-reset:hover{ background:#f8fafc; color:#64748b; }
+  .kimp-note{ font-size:11px; color:#94a3b8; margin-top:10px; line-height:1.5; }
+
+  .kimp-right{ display:flex; flex-direction:column; min-width:0; }
+  .kimp-preview-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px; }
+  .kimp-preview-head b{ font-size:13px; color:#334155; }
+  .kimp-summary{ display:flex; gap:6px; flex-wrap:wrap; }
+  .kimp-chip{ font-size:10.5px; font-weight:800; padding:2px 9px; border-radius:999px; }
+  .kimp-chip-ok{ background:#dcfce7; color:#15803d; }
+  .kimp-chip-update{ background:#dbeafe; color:#1d4ed8; }
+  .kimp-chip-skip{ background:#fef9c3; color:#854d0e; }
+  .kimp-chip-error{ background:#fee2e2; color:#b91c1c; }
+
+  .kimp-preview-table-wrap{ border:1px solid #e2e8f0; border-radius:10px; overflow:auto; max-height:320px; background:#fff; }
+  .kimp-preview-table{ margin:0; font-size:12px; }
+  .kimp-preview-table thead th{ position:sticky; top:0; background:#f8fafc; z-index:1; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:#64748b; }
+  .kimp-row-error td{ background:#fff7f7; }
+  .kimp-empty{ color:#94a3b8; padding:26px 10px!important; font-size:12.5px; }
+  .kimp-badge-st{ font-size:10.5px; font-weight:800; padding:2px 9px; border-radius:999px; white-space:nowrap; cursor:help; }
+  .kimp-st-ok{ background:#dcfce7; color:#15803d; }
+  .kimp-st-update{ background:#dbeafe; color:#1d4ed8; }
+  .kimp-st-skip{ background:#fef9c3; color:#854d0e; }
+  .kimp-st-error{ background:#fee2e2; color:#b91c1c; }
 </style>
 <!-- ===== /THEME ===== -->
 
@@ -227,34 +298,79 @@ if (function_exists('count_table')) {
 
           <!-- Modal Import Excel -->
           <div class="modal fade" id="modal_import_pelanggaran" tabindex="-1" role="dialog">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header" style="background:linear-gradient(90deg,#dbeafe,#fff); border-bottom:1px solid #bfdbfe;">
-                  <button type="button" class="close" data-dismiss="modal">&times;</button>
-                  <h4 class="modal-title"><i class="fa fa-file-excel-o" style="color:#2563eb"></i> Import Pelanggaran dari Excel</h4>
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content kimp-content">
+                <div class="kimp-header">
+                  <i class="fa fa-upload"></i>
+                  <span class="kimp-title">Import Pelanggaran (Excel/CSV)</span>
+                  <div class="kimp-badges">
+                    <span class="kimp-badge" data-toggle="tooltip" title="Hanya admin yang bisa mengakses fitur ini"><i class="fa fa-shield"></i> Proteksi Admin</span>
+                    <span class="kimp-badge" data-toggle="tooltip" title="Data tidak langsung tersimpan — Anda tinjau dulu hasilnya sebelum eksekusi"><i class="fa fa-eye"></i> Preview dulu</span>
+                  </div>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">&times;</button>
                 </div>
-                <form action="kategori_import_act.php" method="post" enctype="multipart/form-data" autocomplete="off">
-                  <div class="modal-body">
-                    <?php echo epoin_csrf_field(); ?>
-                    <input type="hidden" name="jenis" value="pelanggaran">
-                    <input type="hidden" name="aksi" value="import_excel">
-                    <ol style="padding-left:18px; color:#334155; font-size:13px;">
-                      <li>Unduh template dulu:
-                        <a href="kategori_template.php?jenis=pelanggaran" class="btn btn-xs btn-default"><i class="fa fa-download"></i> Template Excel</a>
-                      </li>
-                      <li>Isi kolom <b>A = Nama Kategori</b>, <b>B = Poin</b> (angka positif; tanda minus otomatis). Baris 1 judul.</li>
-                      <li>Simpan lalu unggah di sini. Nama yang sudah ada otomatis dilewati.</li>
-                    </ol>
-                    <div class="form-group">
-                      <label>Pilih file (.xlsx / .xls / .csv, maks 5 MB)</label>
-                      <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+
+                <div class="kimp-body">
+                  <div class="kimp-hint">
+                    <span>Kolom wajib: <code>pelanggaran_nama</code>, <code>pelanggaran_point</code>. Bisa juga pakai header <code>nama</code>, <code>poin</code>.</span>
+                    <a href="kategori_template.php?jenis=pelanggaran" class="kimp-tpl-link"><i class="fa fa-download"></i> Download Template</a>
+                  </div>
+
+                  <div class="kimp-grid">
+                    <!-- KIRI: kontrol -->
+                    <div class="kimp-left">
+                      <div class="kimp-drop" id="kimpDrop_pelanggaran" role="button" tabindex="0" aria-label="Pilih atau tarik-lepas file">
+                        <i class="fa fa-file-excel-o"></i>
+                        <div class="kimp-drop-text">Tarik &amp; lepas file di sini</div>
+                        <div class="kimp-drop-sub">atau klik untuk memilih file<br>(.xlsx, .xls, .csv — maks 5 MB)</div>
+                        <input type="file" id="kimpFile_pelanggaran" accept=".xlsx,.xls,.csv" hidden>
+                      </div>
+                      <div class="kimp-filename" id="kimpFilename_pelanggaran"></div>
+
+                      <div class="kimp-field">
+                        <label>Mode Data <i class="fa fa-question-circle-o" data-toggle="tooltip" title="Skip: baris dgn nama yg sudah ada di daftar akan dilewati. Update: poin baris yg nama-nya sudah ada akan ditimpa dgn nilai baru dari file."></i></label>
+                        <select id="kimpMode_pelanggaran" class="form-control">
+                          <option value="skip">Skip jika nama sudah ada</option>
+                          <option value="update">Update jika nama sudah ada</option>
+                        </select>
+                        <small class="kimp-help">Rekomendasi: Skip kalau data sudah rapi, Update kalau mau revisi poin.</small>
+                      </div>
+
+                      <div class="kimp-field">
+                        <label>Default Poin <i class="fa fa-question-circle-o" data-toggle="tooltip" title="Nilai poin yang dipakai otomatis bila kolom Poin pada suatu baris kosong. Kosongkan bila ingin baris tanpa poin ditandai error."></i></label>
+                        <input type="number" id="kimpDefault_pelanggaran" class="form-control" placeholder="(opsional)" min="0">
+                        <small class="kimp-help">Dipakai kalau kolom poin kosong. Poin diisi angka positif; tanda minus ditampilkan otomatis oleh sistem.</small>
+                      </div>
+
+                      <div class="kimp-actions">
+                        <button type="button" class="btn kimp-btn-preview" id="kimpBtnPreview_pelanggaran"><i class="fa fa-eye"></i> Preview</button>
+                        <button type="button" class="btn kimp-btn-exec" id="kimpBtnExec_pelanggaran" disabled><i class="fa fa-check"></i> Eksekusi Import</button>
+                        <button type="button" class="btn kimp-btn-reset" id="kimpBtnReset_pelanggaran"><i class="fa fa-refresh"></i> Reset</button>
+                      </div>
+                      <div class="kimp-note">Setelah preview OK, baru eksekusi. Kalau ada error, perbaiki file lalu preview ulang.</div>
+                    </div>
+
+                    <!-- KANAN: preview -->
+                    <div class="kimp-right">
+                      <div class="kimp-preview-head">
+                        <b>Preview</b>
+                        <span class="kimp-summary" id="kimpSummary_pelanggaran"></span>
+                      </div>
+                      <div class="kimp-preview-table-wrap">
+                        <table class="table table-condensed kimp-preview-table">
+                          <thead><tr><th style="width:44px;">Line</th><th>Nama</th><th style="width:60px;">Poin</th><th style="width:90px;">Status</th></tr></thead>
+                          <tbody id="kimpPreviewBody_pelanggaran">
+                            <tr><td colspan="4" class="text-center kimp-empty">Belum ada preview. Upload file lalu klik Preview.</td></tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-upload"></i> Unggah &amp; Import</button>
-                  </div>
-                </form>
+                </div>
+
+                <div class="modal-footer" style="border-top:1px solid #eef2f7;">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Tutup</button>
+                </div>
               </div>
             </div>
           </div>
@@ -446,6 +562,16 @@ if (function_exists('count_table')) {
     function initTips(){ if ($.fn.tooltip){ $('[data-toggle="tooltip"]').tooltip({container:'body'}); } }
     $(initTips);
     $(document).on('mouseover','[data-toggle="tooltip"]', initTips);
+  });
+</script>
+
+<script>window.EPOIN_CSRF = <?php echo json_encode(epoin_csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
+<script src="../assets/js/kategori-import.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.EpoinKategoriImport) {
+      EpoinKategoriImport({ jenis: 'pelanggaran', csrfToken: window.EPOIN_CSRF });
+    }
   });
 </script>
 
