@@ -137,6 +137,7 @@
                 $s = mysqli_fetch_assoc($ta);
             ?>
             <form action="ta_update.php" method="post" autocomplete="off">
+              <?php echo epoin_csrf_field(); ?>
               <input type="hidden" name="id" value="<?php echo (int)$s['ta_id']; ?>">
 
               <div class="form-group">

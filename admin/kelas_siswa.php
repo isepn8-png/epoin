@@ -277,7 +277,13 @@
                   <td><?php echo $d['jurusan_nama']; ?></td>
                   <td><span class="badge bg-info"><?php echo $d['siswa_status']; ?></span></td>
                   <td>
-                    <a class="btn btn-danger btn-sm" href="kelas_siswa_keluarkan.php?siswa=<?php echo $d['siswa_id'] ?>&kelas=<?php echo $id_kelas ?>"><i class="fa fa-close"></i> Keluarkan</a>
+                    <form action="kelas_siswa_keluarkan.php" method="post" style="display:inline"
+                          onsubmit="return confirm('Keluarkan <?php echo htmlspecialchars(addslashes($d['siswa_nama']), ENT_QUOTES, 'UTF-8'); ?> dari kelas ini?');">
+                      <?php echo epoin_csrf_field(); ?>
+                      <input type="hidden" name="siswa" value="<?php echo (int)$d['siswa_id']; ?>">
+                      <input type="hidden" name="kelas" value="<?php echo (int)$id_kelas; ?>">
+                      <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-close"></i> Keluarkan</button>
+                    </form>
                   </td>
                 </tr>
               <?php

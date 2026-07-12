@@ -11,6 +11,10 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 // ====== Bootstrap koneksi ======
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
+// ====== Auth: hanya admin (staf) yang boleh menetapkan wali kelas ======
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_guard(true);
+
 // Coba beberapa lokasi umum untuk koneksi.php
 $koneksi_found = false;
 $try_paths = [

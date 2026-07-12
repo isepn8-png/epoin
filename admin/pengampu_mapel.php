@@ -15,6 +15,10 @@ $action = isset($_POST['action']) ? $_POST['action'] : (isset($_GET['action']) ?
 
 /* ---------- Tambah penugasan ---------- */
 if ($action === 'tambah') {
+  if(($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !epoin_csrf_validate()){
+    header("location: pengampu_mapel.php?alert=invalid");
+    exit;
+  }
   $ta    = _int(_post('ta_id'));
   $kelas = _int(_post('kelas_id'));
   $mapel = _int(_post('mapel_id'));
@@ -40,6 +44,10 @@ if ($action === 'tambah') {
 
 /* ---------- Edit penugasan ---------- */
 if ($action === 'edit') {
+  if(($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !epoin_csrf_validate()){
+    header("location: pengampu_mapel.php?alert=invalid");
+    exit;
+  }
   $id    = _int(_post('id'));
   $ta    = _int(_post('ta_id'));
   $kelas = _int(_post('kelas_id'));
@@ -347,6 +355,7 @@ include 'header.php';
     <div class="modal-content">
       <form method="post" action="pengampu_mapel.php" autocomplete="off" id="formTambah">
         <input type="hidden" name="action" value="tambah">
+        <?php echo epoin_csrf_field(); ?>
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
           <h4 class="modal-title" id="addLabel"><i class="fa fa-plus-circle"></i> Tambah Penugasan</h4>
@@ -417,6 +426,7 @@ include 'header.php';
     <div class="modal-content">
       <form method="post" action="pengampu_mapel.php" autocomplete="off" id="formEdit">
         <input type="hidden" name="action" value="edit">
+        <?php echo epoin_csrf_field(); ?>
         <input type="hidden" name="id" id="edit_id">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>

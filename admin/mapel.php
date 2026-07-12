@@ -22,6 +22,10 @@ $action = isset($_POST['action']) ? $_POST['action'] : (isset($_GET['action']) ?
 
 // Tambah mapel
 if ($action === 'tambah') {
+  if(($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !epoin_csrf_validate()){
+    header("location: mapel.php?alert=invalid");
+    exit;
+  }
   $kode = strtoupper(_post('kode'));
   $nama = _post('nama');
 
@@ -49,6 +53,10 @@ if ($action === 'tambah') {
 
 // Edit mapel
 if ($action === 'edit') {
+  if(($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !epoin_csrf_validate()){
+    header("location: mapel.php?alert=invalid");
+    exit;
+  }
   $id   = _int(_post('id'));
   $kode = strtoupper(_post('kode'));
   $nama = _post('nama');
@@ -320,6 +328,7 @@ if($_qCount && ($__r = mysqli_fetch_assoc($_qCount))){ $total_mapel = (int)$__r[
     <div class="modal-content">
       <form action="mapel.php" method="post" autocomplete="off">
         <input type="hidden" name="action" value="tambah">
+        <?php echo epoin_csrf_field(); ?>
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
           <h4 class="modal-title" id="tambahLabel"><i class="fa fa-plus-circle"></i> Tambah Mapel</h4>
@@ -351,6 +360,7 @@ if($_qCount && ($__r = mysqli_fetch_assoc($_qCount))){ $total_mapel = (int)$__r[
     <div class="modal-content">
       <form action="mapel.php" method="post" autocomplete="off" id="formEdit">
         <input type="hidden" name="action" value="edit">
+        <?php echo epoin_csrf_field(); ?>
         <input type="hidden" name="id" id="edit_id">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>

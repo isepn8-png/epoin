@@ -4,9 +4,11 @@
 // update dinamis (nama/nis/jurusan/status), opsi ganti sandi (termasuk reset ke "12345678"),
 // dan hapus foto lama jika ada foto baru.
 
-// ---- Bootstrap ----
-session_start();
-if (!isset($_SESSION['_csrf'], $_POST['_csrf']) || !hash_equals($_SESSION['_csrf'], $_POST['_csrf'])) {
+// ---- Bootstrap: auth (admin) + POST + CSRF ----
+require_once __DIR__ . '/../includes/epoin_security.php';
+epoin_staff_guard(true);
+epoin_require_post();
+if (!epoin_csrf_validate()) {
   http_response_code(400);
   exit('CSRF token tidak valid.');
 }

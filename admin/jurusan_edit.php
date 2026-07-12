@@ -169,7 +169,7 @@ if ($id > 0 && ($stmt = mysqli_prepare($koneksi, "SELECT jurusan_id, jurusan_nam
               </div>
             <?php else: ?>
               <form action="jurusan_update.php" method="post" autocomplete="off" id="form-edit" novalidate>
-                <input type="hidden" name="csrf_token" value="<?php echo e($csrf); ?>">
+                <?php echo epoin_csrf_field(); ?>
                 <input type="hidden" name="id" value="<?php echo (int)$jurusan['jurusan_id']; ?>">
 
                 <div class="form-group has-feedback">

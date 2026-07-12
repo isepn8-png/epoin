@@ -138,6 +138,7 @@
               if($data && mysqli_num_rows($data)){
                 $d = mysqli_fetch_array($data);
               ?>
+                <?php echo epoin_csrf_field(); ?>
                 <div class="form-group">
                   <label>Nama Kelas</label>
                   <input type="hidden" name="id" value="<?php echo (int)$d['kelas_id']; ?>">
