@@ -138,7 +138,9 @@ $TOTAL_MODUL = array_sum(array_map(fn($s) => count($s['items']), $PANDUAN));
     #pdSearch{
       width:100%;border-radius:999px;border:none;padding:11px 16px 11px 40px;
       font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.15);outline:none;
+      color:#0f172a;background:#fff;
     }
+    #pdSearch::placeholder{color:#94a3b8;opacity:1;}
     #pdSearchClear{position:absolute;right:6px;top:6px;bottom:6px;width:28px;border:none;background:transparent;
       color:#64748b;cursor:pointer;display:none;}
     #pdNoResult{display:none;text-align:center;padding:40px 20px;color:#94a3b8;}
