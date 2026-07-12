@@ -123,7 +123,7 @@ $required = ['NIS', 'NAMA', 'STATUS', 'JURUSAN_ID'];
 foreach ($required as $req) {
   if (!isset($headerMap[$req])) {
     @unlink($tmp);
-    die('Header wajib tidak ditemukan: ' . htmlspecialchars($req, ENT_QUOTES, 'UTF-8') . '. Gunakan template "import_siswa.xlsx".');
+    die('Header wajib tidak ditemukan: ' . htmlspecialchars($req, ENT_QUOTES, 'UTF-8') . '. Unduh template terbaru lewat tombol "Unduh Template" di halaman Import.');
   }
 }
 
@@ -269,7 +269,7 @@ $total = $ins + $upd + $totalErr;
     <div style="margin-top:14px;">
       <a class="btn btn-primary" href="siswa_import.php">&larr; Kembali ke Import</a>
       <a class="btn btn-ghost" href="siswa.php">Ke Daftar Siswa</a>
-      <a class="btn btn-ghost" href="../import_siswa.xlsx" target="_blank">Unduh Template XLSX</a>
+      <a class="btn btn-ghost" href="siswa_template.php">Unduh Template XLSX</a>
     </div>
     <div style="margin-top:8px;color:#607d8b;font-size:12px;">
       Password untuk baris INSERT baru diset ke <b>md5(NIS)</b>. Update tidak mengubah password.

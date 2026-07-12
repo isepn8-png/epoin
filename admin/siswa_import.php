@@ -200,8 +200,7 @@ if (!isset($koneksi) || !$koneksi) {
                 <b>
                   <a
                     class="btn btn-template btn-xs"
-                    href="../import_siswa.xlsx"
-                    target="_blank"
+                    href="siswa_template.php"
                     data-toggle="tooltip"
                     data-placement="bottom"
                     title="Header wajib: NIS, NAMA, STATUS, JURUSAN_ID — isi sesuai daftar jurusan di kanan"
