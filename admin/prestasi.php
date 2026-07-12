@@ -47,7 +47,8 @@ if (function_exists('count_table')) {
   /* Modal fix (kadang tertutup elemen lain) */
   .modal { z-index:1050; }
   .modal-backdrop { z-index:1040; }
-  #modal_prestasi .modal-content{ position:relative; z-index:1060; }
+  /* Semua modal-content di atas backdrop — sebelumnya hanya #modal_prestasi, jadi modal Import ke-overlay hitam & terkunci. */
+  .modal .modal-content{ position:relative; z-index:1060; }
   #modal_prestasi input.form-control{ background:#fff; pointer-events:auto; }
 
   /* Box header accent */
@@ -544,6 +545,8 @@ if (function_exists('count_table')) {
 <script src="../assets/js/kategori-import.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Pindahkan modal ke <body> agar lepas dari stacking-context .content-wrapper (anti backdrop menutupi modal).
+    if (window.jQuery) { try { jQuery('#modal_import_prestasi').appendTo(document.body); } catch (e) {} }
     if (window.EpoinKategoriImport) {
       EpoinKategoriImport({ jenis: 'prestasi', csrfToken: window.EPOIN_CSRF });
     }
