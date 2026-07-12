@@ -45,5 +45,8 @@ admin/tools/reset_epoin.php
 # deploy.sh dibuat manual di VPS (bukan dari repo) — server-specific
 deploy.sh
 
+# ditulis ulang oleh deploy.sh tiap deploy (commit hash + tanggal per-situs)
+includes/build_info.php
+
 # webhook.php di-commit ke repo (secret dibaca dari .env, aman)
 # webhook.php

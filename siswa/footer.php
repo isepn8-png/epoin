@@ -1,7 +1,9 @@
 <?php if (!isset($THEME_BRAND)) { require_once __DIR__.'/../includes/theme_brand.php'; } ?>
 <?php
-  // Versi aplikasi (fallback jika konstanta tidak ada)
-  $APP_VERSION = defined('EPOIN_VERSION') ? EPOIN_VERSION : '3.2.9';
+  require_once __DIR__.'/../includes/changelog_data.php';
+  $APP_VERSION = EPOIN_VERSION;
+  $EPOIN_BUILD = @include __DIR__.'/../includes/build_info.php';
+  $EPOIN_LAST_DEPLOYED = (is_array($EPOIN_BUILD) && !empty($EPOIN_BUILD['date'])) ? $EPOIN_BUILD['date'] : null;
 ?>
 
   <!-- /.content-wrapper -->
@@ -67,15 +69,22 @@
   .btn-grad-blue{background:linear-gradient(90deg,#0B57D0,#3BA3FF); color:#fff; border:0;} .btn-grad-blue:hover{ filter:brightness(1.06); color:#fff; }
   .btn-soft{ background:#eef5ff; color:#0B57D0; border:1px solid #cfe0ff; }
 
-  /* Loader cek versi & progres update (SAMA DENGAN FOOTER ADMIN) */
-  .check-loader{display:none; text-align:center; margin:10px 0 4px;}
-  .loader-stack{position:relative; display:inline-block; width:66px; height:66px;}
-  .loader-donut{ position:absolute; inset:0; border-radius:50%; background: conic-gradient(from 0deg, rgba(59,163,255,1) 0 120deg, rgba(59,163,255,.15) 120deg 360deg); -webkit-mask: radial-gradient(circle at center, transparent 23px, #000 24px); mask: radial-gradient(circle at center, transparent 23px, #000 24px); animation: spin 1s linear infinite; box-shadow: 0 8px 24px rgba(11,87,208,.25); }
-  .loader-radar{ position:absolute; inset:6px; border-radius:50%; border:2px dashed rgba(11,87,208,.35); animation: spin 4s linear infinite reverse; }
-  .loader-pulse{ position:absolute; inset:-6px; border-radius:50%; background: radial-gradient(circle, rgba(59,163,255,.35), rgba(59,163,255,0) 60%); animation: pulse 1.8s ease-in-out infinite; filter: blur(2px); }
-  @keyframes spin { to { transform: rotate(360deg);} } @keyframes pulse { 0%,100%{opacity:.35; transform:scale(.95);} 50%{opacity:.7; transform:scale(1.05);} }
-  .loader-caption{font-size:12px; margin-top:8px; color:#0B57D0; font-weight:700; letter-spacing:.3px;}
-  .checkmark{ display:none; font-size:20px; color:#22c55e; }
+  /* Riwayat Versi (timeline) */
+  .version-history{ max-height:340px; overflow-y:auto; margin-top:6px; padding-right:4px; }
+  .vh-item{ position:relative; display:flex; gap:12px; padding:0 0 18px 4px; }
+  .vh-item:last-child{ padding-bottom:2px; }
+  .vh-item:before{ content:""; position:absolute; left:9px; top:16px; bottom:0; width:2px; background:#e5eaf3; }
+  .vh-item:last-child:before{ display:none; }
+  .vh-dot{ flex:0 0 20px; width:20px; height:20px; border-radius:50%; background:#e5eaf3; border:3px solid #fff; box-shadow:0 0 0 1px #e5eaf3; margin-top:2px; z-index:1; }
+  .vh-item.vh-current .vh-dot{ background:#0B57D0; box-shadow:0 0 0 1px #0B57D0; }
+  .vh-body{ flex:1 1 auto; min-width:0; }
+  .vh-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .vh-ver{ font-weight:800; color:#0f172a; font-size:13.5px; }
+  .vh-date{ font-size:11.5px; color:#94a3b8; }
+  .vh-badge-now{ font-size:10px; font-weight:700; color:#0B57D0; background:#eef5ff; border:1px solid #cfe0ff; border-radius:999px; padding:1px 8px; }
+  .vh-title{ font-weight:700; color:#334155; font-size:12.5px; margin:2px 0 4px; }
+  .vh-body ul{ margin:0; padding-left:16px; }
+  .vh-body li{ font-size:12px; color:#64748b; line-height:1.6; }
 </style>
 
 <!-- ==========================================================
@@ -252,40 +261,35 @@
       </div>
 
       <div class="modal-body">
-        <div class="callout" id="updateStatusCallout"><strong>Status:</strong> Tekan <em>Cek Pembaruan</em> untuk melihat apakah ada versi terbaru yang tersedia.</div>
-
-        <!-- Loader cek pembaruan -->
-        <div id="checkLoaderWrap" class="check-loader">
-          <div class="loader-stack"><div class="loader-donut"></div><div class="loader-radar"></div><div class="loader-pulse"></div></div>
-          <div class="loader-caption">Mengecek pembaruan…</div>
+        <div class="callout" id="updateStatusCallout">
+          <strong>Status:</strong> Situs ini tersambung ke pusat pembaruan &amp; menerima pembaruan otomatis.
+          <?php if ($EPOIN_LAST_DEPLOYED): ?>
+            <br>Terakhir diperbarui: <strong><?php echo htmlspecialchars($EPOIN_LAST_DEPLOYED, ENT_QUOTES, 'UTF-8'); ?></strong>
+          <?php endif; ?>
         </div>
 
-        <!-- Ringkas Rilis -->
-        <h5 style="margin:10px 0 6px" id="releaseHeading">Ringkas Rilis</h5>
-        <ul class="changelog">
-          <li>Peningkatan performa dashboard & cache query.</li>
-          <li>Patch keamanan RBAC & penguatan CSP untuk CDN ikon/CSS.</li>
-          <li>Ujian GForm : perbaikan <em>preview</em> bertanda tangan & log pelanggaran.</li>
-          <li>Ekspor : template PDF/Excel lebih rapi, dukung logo sekolah otomatis.</li>
-          <li>Util : perbaikan notifikasi & konsistensi badge “Data Master”.</li>
-        </ul>
-
-        <div id="latestInfo" style="display:none; margin-top:8px;">
-          <div class="callout" id="availableCallout" style="display:none; border-left-color:#22c55e;">Versi terbaru tersedia: <strong id="latestVersionText">-</strong>. Rekomendasi: perbarui untuk fitur & patch terbaru.</div>
-          <div class="callout" id="upToDateCallout" style="display:none; border-left-color:#16a34a;">✅ Anda sudah menggunakan versi terbaru.</div>
-        </div>
-
-        <!-- Progres update -->
-        <div class="progress-wrap" id="updateProgressWrap">
-          <div class="progress"><div class="progress-bar" id="updateProgressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div></div>
-          <div class="loader-dots" id="updateDots">Mengunduh <span class="dot">•</span><span class="dot">•</span><span class="dot">•</span></div>
-          <div class="checkmark" id="updateSuccess">✔ Update berhasil dipasang</div>
+        <h5 style="margin:14px 0 8px">Riwayat Versi</h5>
+        <div class="version-history">
+          <?php foreach ($EPOIN_CHANGELOG as $i => $rel): ?>
+          <div class="vh-item<?php echo $i === 0 ? ' vh-current' : ''; ?>">
+            <div class="vh-dot"></div>
+            <div class="vh-body">
+              <div class="vh-head">
+                <span class="vh-ver">v<?php echo htmlspecialchars($rel['versi'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="vh-date"><?php echo htmlspecialchars($rel['tanggal'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php if ($i === 0): ?><span class="vh-badge-now">Versi saat ini</span><?php endif; ?>
+              </div>
+              <div class="vh-title"><?php echo htmlspecialchars($rel['judul'], ENT_QUOTES, 'UTF-8'); ?></div>
+              <ul>
+                <?php foreach ($rel['items'] as $it): ?><li><?php echo htmlspecialchars($it, ENT_QUOTES, 'UTF-8'); ?></li><?php endforeach; ?>
+              </ul>
+            </div>
+          </div>
+          <?php endforeach; ?>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="button" id="btnCheckUpdate" class="btn btn-soft btn-pill">Cek Pembaruan</button>
-        <button type="button" id="btnStartUpdate" class="btn btn-grad-blue btn-pill" disabled>Perbarui Sekarang</button>
         <button type="button" class="btn btn-default btn-pill" data-dismiss="modal">Tutup</button>
       </div>
     </div>
@@ -417,79 +421,6 @@
     $('body').on('hidden.bs.modal', '.modal', function () {
       if ($('.modal.in, .modal.show').length) $('body').addClass('modal-open');
       else { $('.modal-backdrop').remove(); $('body').removeClass('modal-open'); }
-    });
-
-    /* ====== Cek & Update Versi (UI/loader persis admin) ====== */
-    var $versionLink   = $('#epoinVersionLink');
-    var currentVersion = ($versionLink.data('current-version') || '').toString().trim();
-    var latestVersion  = '3.3.0'; // simulasi versi terbaru
-
-    var isChecking=false, isUpdating=false, updateDone=false;
-
-    function cmpVer(a,b){
-      var pa=a.split('.').map(Number), pb=b.split('.').map(Number);
-      for(var i=0;i<Math.max(pa.length,pb.length);i++){ var x=pa[i]||0, y=pb[i]||0; if(x<y)return -1; if(x>y)return 1; }
-      return 0;
-    }
-    function setReleaseHeading(version, isLatest){
-      $('#releaseHeading').text((isLatest?'Ringkas Rilis Terbaru':'Ringkas Rilis (Versi Saat Ini)') + ' — v ' + (version||'-'));
-    }
-    function resetUpdaterUI(){
-      $('#updateStatusCallout').show().html('<strong>Status:</strong> Tekan <em>Cek Pembaruan</em> untuk melihat apakah ada versi terbaru yang tersedia.');
-      $('#latestInfo, #availableCallout, #upToDateCallout').hide();
-      $('#updateProgressWrap, #updateDots, #updateSuccess').hide();
-      $('#updateProgressBar').css('width','0%').attr('aria-valuenow',0);
-      $('#checkLoaderWrap').hide();
-      $('#btnCheckUpdate').prop('disabled',false).html('Cek Pembaruan');
-      $('#btnStartUpdate').prop('disabled',true).removeClass('btn-soft').addClass('btn-grad-blue').text('Perbarui Sekarang').removeAttr('data-state');
-      isChecking=false; isUpdating=false; updateDone=false;
-    }
-
-    $('#epoinVersionModal').on('show.bs.modal', function(){
-      $('#currentVersionText').text(currentVersion || '-');
-      resetUpdaterUI(); setReleaseHeading(currentVersion || '-', false);
-    });
-
-    $('#btnCheckUpdate').on('click', function(){
-      if(isChecking) return; isChecking = true;
-      var $btn=$(this), orig=$btn.html();
-      $('#updateStatusCallout, #latestInfo, #availableCallout, #upToDateCallout').hide();
-      $('#checkLoaderWrap').show();
-      $btn.prop('disabled',true).html('<span class="btn-spinner"></span>Mengecek…');
-      var delay = 1200 + Math.floor(Math.random()*1000);
-      setTimeout(function(){
-        $('#checkLoaderWrap').hide(); $('#latestInfo').show();
-        if(!currentVersion){
-          $('#availableCallout').show().html('ℹ️ Tidak dapat membaca versi saat ini. Definisikan <code>EPOIN_VERSION</code> di <em>includes/theme_brand.php</em>.');
-          $('#btnStartUpdate').prop('disabled',true); setReleaseHeading('-',false);
-        } else if (cmpVer(currentVersion, latestVersion) < 0){
-          $('#availableCallout').show(); $('#latestVersionText').text(latestVersion);
-          $('#btnStartUpdate').prop('disabled',false); setReleaseHeading(latestVersion,true);
-        } else { $('#upToDateCallout').show(); $('#btnStartUpdate').prop('disabled',true); setReleaseHeading(currentVersion,false); }
-        $btn.prop('disabled',false).html(orig); isChecking=false;
-      }, delay);
-    });
-
-    $('#btnStartUpdate').on('click', function(){
-      var $btn=$(this);
-      if(updateDone){ $btn.prop('disabled',true); $('#epoinVersionModal').modal('hide'); return; }
-      if(isUpdating || $btn.prop('disabled')) return; isUpdating=true;
-
-      $btn.prop('disabled',true).text('Memperbarui…');
-      $('#availableCallout').hide(); $('#updateProgressWrap').show(); $('#updateDots').show().text('Mengunduh ');
-      var dots=['•','••','•••','••••'], di=0, dotTimer=setInterval(function(){ $('#updateDots').html('Mengunduh <span class="dot">'+dots[di%dots.length]+'</span>'); di++; },300);
-      var p=0, timer=setInterval(function(){
-        p += Math.floor(Math.random()*14)+6; if(p>100)p=100;
-        $('#updateProgressBar').css('width', p+'%').attr('aria-valuenow', p);
-        if(p>=100){ clearInterval(timer); setTimeout(function(){
-          clearInterval(dotTimer); $('#updateDots').hide(); $('#updateSuccess').show().text('✔ Update berhasil dipasang ke ' + latestVersion);
-          currentVersion = latestVersion; $('#currentVersionText').text(currentVersion);
-          $versionLink.data('current-version', currentVersion).html('Versi ' + currentVersion);
-          updateDone=true; isUpdating=false;
-          $btn.text('Selesai').removeClass('btn-grad-blue').addClass('btn-soft').prop('disabled',false).attr('data-state','done');
-          setReleaseHeading(currentVersion,false);
-        },600);}
-      },420);
     });
 
     /* ====== Tap feedback kartu benefit (sesuai admin) ====== */
